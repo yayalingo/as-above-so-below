@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>As Above, So Below — A Complex-Systems Bridge</title>
+<style>
+  /* ================= Design Tokens (Apple Design System) ================= */
+  :root {
+    --space-xxs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-xxl: 48px;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-pill: 9999px;
+
+    --font-display: "SF Pro Display", system-ui, -apple-system, "Inter", "Segoe UI", sans-serif;
+    --font-text: "SF Pro Text", system-ui, -apple-system, "Inter", "Segoe UI", sans-serif;
+
+    --accent: #007AFF;
+    --accent-focus: #0071E3;
+    --accent-on-dark: #2997FF;
+
+    --shadow-product: 0 3px 30px rgba(0,0,0,0.22);
+    --hairline: rgba(0,0,0,0.08);
+    --blur-glass: saturate(180%) blur(20px);
+
+    --green: #30D158;
+    --red: #FF453A;
+    --orange: #FF9F0A;
+    --yellow: #FFD60A;
+    --pink: #FF375F;
+    --indigo: #5E5CE6;
+    --purple: #BF5AF2;
+    --cyan: #64D2FF;
+    --blue: #0A84FF;
+  }
+
+  :root, [data-theme="light"] {
+    --bg: #FFFFFF;
+    --bg-secondary: #F5F5F7;
+    --bg-tertiary: #EAECEF;
+    --label: #1D1D1F;
+    --label-secondary: #6E6E73;
+    --label-tertiary: #8E8E93;
+    --separator: rgba(60,60,67,0.29);
+    --card: #FFFFFF;
+    --card-border: rgba(0,0,0,0.08);
+  }
+
+  [data-theme="dark"] {
+    --bg: #000000;
+    --bg-secondary: #1C1C1E;
+    --bg-tertiary: #2C2C2E;
+    --label: #FFFFFF;
+    --label-secondary: rgba(235,235,245,0.60);
+    --label-tertiary: rgba(235,235,245,0.30);
+    --separator: rgba(84,84,88,0.65);
+    --card: #1C1C1E;
+    --card-border: rgba(255,255,255,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-text);
+    font-size: 17px;
+    line-height: 1.47;
+    letter-spacing: -0.4px;
+    color: var(--label);
+    background: var(--bg);
+    min-height: 100vh;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* ================= Nav ================= */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: var(--blur-glass);
+    -webkit-backdrop-filter: var(--blur-glass);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border-bottom: 0.5px solid var(--separator);
+  }
+  .nav-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: var(--space-sm) var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+  .brand .glyph {
+    font-size: 22px;
+    line-height: 1;
+    color: var(--accent);
+    user-select: none;
+  }
+  .brand .name {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+  }
+  .brand .sub {
+    font-size: 12px;
+    color: var(--label-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tabs {
+    display: flex;
+    gap: var(--space-xs);
+    margin-left: auto;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+  }
+  .tabs button {
+    border: none;
+    background: transparent;
+    color: var(--label-secondary);
+    font-family: var(--font-text);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tabs button.active {
+    background: var(--bg);
+    color: var(--label);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
+  .theme-btn {
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--label);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 16px;
+    display: grid;
+    place-items: center;
+  }
+
+  main { max-width: 1180px; margin: 0 auto; padding: var(--space-lg) var(--space-md) var(--space-xxl); }
+
+  /* ================= Header strip ================= */
+  .hero { margin-bottom: var(--space-lg); }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -1.2px;
+    margin-bottom: var(--space-xs);
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .lede {
+    font-size: 17px;
+    color: var(--label-secondary);
+    max-width: 680px;
+  }
+
+  /* ================= Stage ================= */
+  .stage-wrap {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-product);
+    background: #06060f;
+  }
+  canvas#stage { display: block; width: 100%; height: auto; }
+  .stage-caption {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(0,0,0,0.5);
+    border-top: 0.5px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.65);
+    font-size: 12.5px;
+    letter-spacing: 0;
+  }
+  .stage-caption b { color: #fff; font-weight: 600; }
+
+  /* ================= Readouts ================= */
+  .readouts {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-sm);
+    margin: var(--space-md) 0;
+  }
+  .readout {
+    background: var(--card);
+    border: 0.5px solid var(--card-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-md);
+  }
+  .readout .k {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--label-tertiary);
+    text-transform: uppercase;
+  }
+  .readout .v {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout .bar {
+    height: 5px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    margin-top: var(--space-xs);
+    overflow: hidden;
+  }
+  .readout .bar > i {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    transition: width 0.12s linear;
+  }
+
+  /* ================= Charts ================= */
+  .charts {
+    background: var(--card);
+    border: 0.5px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+  .charts .head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xs);
+  }
+  .charts h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .legend { display: flex; gap: var(--space-md); flex-wrap: wrap; font-size: 13px; color: var(--label-secondary); letter-spacing: 0; }
+  .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  canvas#chart { display: block; width: 100%; }
+
+  /* ================= Controls ================= */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+    background: var(--card);
+    border: 0.5px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+  }
+  .ctl label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    margin-bottom: var(--space-xs);
+  }
+  .ctl label .val { color: var(--label-tertiary); font-variant-numeric: tabular-nums; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 0.5px solid var(--separator);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+  .ctl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-size: 14px;
+    letter-spacing: 0;
+  }
+  .switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; inset: 0;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-pill);
+    transition: 0.25s;
+    cursor: pointer;
+  }
+  .switch .slider::before {
+    content: ""; position: absolute;
+    width: 24px; height: 24px; left: 2px; top: 2px;
+    background: #fff; border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: 0.25s;
+  }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  button.ghost {
+    border: 0.5px solid var(--separator);
+    background: transparent;
+    color: var(--label);
+    font-family: var(--font-text);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button.ghost:hover { background: var(--bg-tertiary); }
+  button.primary {
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-text);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  button.primary:hover { background: var(--accent-focus); }
+
+  /* ================= Skeptic Lab ================= */
+  .skeptic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+  .panel {
+    background: var(--card);
+    border: 0.5px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+  }
+  .panel.wide { grid-column: 1 / -1; }
+  .panel h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    margin-bottom: var(--space-xs);
+  }
+  .panel .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+    margin-bottom: var(--space-sm);
+  }
+  .tag.established { background: rgba(10,132,255,0.15); color: var(--accent-on-dark); }
+  .tag.frontier { background: rgba(255,159,10,0.15); color: var(--orange); }
+  .tag.speculative { background: rgba(255,55,95,0.15); color: var(--red); }
+  .tag.core { background: rgba(48,209,88,0.15); color: var(--green); }
+  .panel p { color: var(--label-secondary); font-size: 15px; margin-bottom: var(--space-sm); }
+  .panel p b { color: var(--label); }
+
+  .causal { font-size: 13.5px; letter-spacing: 0; }
+  .causal .flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .causal .node { padding: 5px 10px; border-radius: 8px; font-weight: 600; }
+  .causal .arrow { color: var(--label-tertiary); }
+  .causal .real .node { background: rgba(10,132,255,0.14); color: var(--accent-on-dark); }
+  .causal .real .arrow { color: var(--accent); }
+  .causal .fake .node { background: rgba(255,55,95,0.10); color: var(--red); }
+  .causal .fake .arrow { color: var(--red); opacity: 0.6; }
+
+  .r-line { display: flex; align-items: center; gap: var(--space-sm); font-size: 14px; margin-bottom: var(--space-xs); letter-spacing: 0; }
+  .r-line .rval { font-family: var(--font-display); font-weight: 600; font-size: 18px; min-width: 58px; font-variant-numeric: tabular-nums; }
+  .r-bar { height: 8px; background: var(--bg-tertiary); border-radius: var(--radius-pill); overflow: hidden; flex: 1; }
+  .r-bar > i { display: block; height: 100%; border-radius: var(--radius-pill); transition: width 0.2s; }
+
+  .oracle-box {
+    border: 0.5px dashed var(--separator);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    font-size: 15px;
+    color: var(--label);
+    min-height: 88px;
+    margin-bottom: var(--space-sm);
+  }
+  .oracle-box .planets { color: var(--indigo); font-weight: 600; }
+
+  .ladder { display: flex; flex-direction: column; gap: var(--space-sm); }
+  .ladder .tier {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 14px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    letter-spacing: 0;
+  }
+  .ladder .tier .name { font-weight: 600; min-width: 92px; }
+  .ladder .tier .desc { color: var(--label-secondary); }
+  .tier.t1 { background: rgba(10,132,255,0.10); }
+  .tier.t2 { background: rgba(255,159,10,0.10); }
+  .tier.t3 { background: rgba(255,55,95,0.10); }
+
+  .preds { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--space-sm); }
+  .preds span {
+    width: 26px; height: 26px;
+    display: grid; place-items: center;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: opacity 0.25s;
+  }
+  .preds span.hit { background: rgba(48,209,88,0.18); color: var(--green); }
+  .preds span.miss { background: var(--bg-tertiary); color: var(--label-tertiary); }
+
+  footer {
+    max-width: 1180px;
+    margin: var(--space-xxl) auto 0;
+    padding: var(--space-md);
+    border-top: 0.5px solid var(--separator);
+    color: var(--label-tertiary);
+    font-size: 13px;
+    letter-spacing: 0;
+    line-height: 1.6;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 860px) {
+    .readouts { grid-template-columns: repeat(2, 1fr); }
+    .controls { grid-template-columns: 1fr; }
+    .skeptic-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 34px; }
+    .nav-inner { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="brand">
+      <span class="glyph">☰</span>
+      <div>
+        <div class="name">As Above, So Below</div>
+        <div class="sub">如在其上，如在其下 — a complex-systems bridge</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button data-tab="sim" class="active">The Bridge</button>
+      <button data-tab="skeptic">Skeptic Lab</button>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="Toggle theme">☾</button>
+  </div>
+</nav>
+
+<main>
+  <header class="hero">
+    <h1>The cosmos and the body are <span class="accent">the same kind of system</span>.</h1>
+    <p class="lede">
+      Astrology and the I Ching are often dismissed as superstition. But beneath their
+      symbolism is a real intuition: <b>celestial bodies and the human body are both coupled,
+      dynamical complex systems</b>. This is a live model of that idea — and a skeptical look
+      at where it breaks down.
+    </p>
+  </header>
+
+  <!-- ============ TAB 1: The Bridge ============ -->
+  <section id="tab-sim">
+    <div class="stage-wrap">
+      <canvas id="stage" width="1280" height="620"></canvas>
+      <div class="stage-caption">
+        <span><b>Left</b> — macro system: celestial agents orbiting, emitting signals.</span>
+        <span><b>Right</b> — micro system: a nested network of body agents.</span>
+        <span><b>Center</b> — the bridge: a signal channel coupling the two.</span>
+        <span id="skepticBadge" hidden><b style="color:#FFD60A">Skeptic mode on</b> — the planets are dimmed; only the Sun's path is "established".</span>
+      </div>
+    </div>
+
+    <div class="readouts">
+      <div class="readout">
+        <div class="k">Mood</div>
+        <div class="v" id="rMood">—</div>
+        <div class="bar"><i id="bMood" style="background:var(--pink); width:0%"></i></div>
+      </div>
+      <div class="readout">
+        <div class="k">Energy</div>
+        <div class="v" id="rEnergy">—</div>
+        <div class="bar"><i id="bEnergy" style="background:var(--green); width:0%"></i></div>
+      </div>
+      <div class="readout">
+        <div class="k">Melatonin</div>
+        <div class="v" id="rMel">—</div>
+        <div class="bar"><i id="bMel" style="background:var(--indigo); width:0%"></i></div>
+      </div>
+      <div class="readout">
+        <div class="k">Circadian sync</div>
+        <div class="v" id="rSync">—</div>
+        <div class="bar"><i id="bSync" style="background:var(--blue); width:0%"></i></div>
+      </div>
+      <div class="readout">
+        <div class="k">r(Cosmos, Mood)</div>
+        <div class="v" id="rCorr">—</div>
+        <div class="bar"><i id="bCorr" style="background:var(--accent); width:0%"></i></div>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="head">
+        <h2>Signal over time</h2>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--accent)"></span>Cosmic signal (Sun-dominant)</span>
+          <span><span class="dot" style="background:var(--pink)"></span>Mood (emergent)</span>
+          <span><span class="dot" style="background:var(--orange)"></span>Astrology signal (planets only)</span>
+        </div>
+      </div>
+      <canvas id="chart" width="1180" height="200"></canvas>
+    </div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label>Simulation speed <span class="val" id="vSpeed">1.0×</span></label>
+        <input type="range" id="speed" min="0.25" max="4" step="0.25" value="1">
+      </div>
+      <div class="ctl">
+        <label>Signal coupling <span class="val" id="vCoupling">0.70</span></label>
+        <input type="range" id="coupling" min="0" max="1" step="0.01" value="0.7">
+      </div>
+      <div class="ctl">
+        <label>Noise <span class="val" id="vNoise">0.00</span></label>
+        <input type="range" id="noise" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="ctl">
+        <label style="margin-bottom:0;">Skeptic mode <span class="val">(dim the unproven)</span></label>
+        <div class="ctl-row">
+          <span>Skeptic overlay</span>
+          <label class="switch"><input type="checkbox" id="skeptic"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="ctl">
+        <label style="margin-bottom:0;">Experiment</label>
+        <div class="ctl-row" style="gap:8px; flex-wrap:wrap;">
+          <button class="ghost" id="shuffle">Shuffle planet phases</button>
+          <button class="ghost" id="pause">Pause</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <label style="margin-bottom:0;">Reset</label>
+        <div class="ctl-row">
+          <button class="primary" id="reset">Reset model</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB 2: Skeptic Lab ============ -->
+  <section id="tab-skeptic" hidden>
+    <div class="skeptic-grid">
+
+      <div class="panel wide">
+        <span class="tag core">Correlation ≠ Causation</span>
+        <h3>The astrologer sees a correlation. The causal graph tells another story.</h3>
+        <p>
+          In <b>this</b> model the causal graph is fully known — because we wrote it. The Sun's
+          light drives the circadian clock (SCN), which drives melatonin, cortisol, mood and energy.
+          The planets contribute <b>nothing</b> to mood here. Yet a naive observer who only measures
+          "the sky" versus "mood" can still find a nonzero correlation, because everything is periodic
+          and finite samples produce spurious alignment.
+        </p>
+        <div class="causal">
+          <div class="flow real">
+            <span class="node">Sunlight</span><span class="arrow">→</span>
+            <span class="node">SCN</span><span class="arrow">→</span>
+            <span class="node">Melatonin</span><span class="arrow">→</span>
+            <span class="node">Mood</span>
+            <span style="color:var(--label-tertiary); font-weight:400;">(established, real edge)</span>
+          </div>
+          <div class="flow fake" style="margin-top:8px;">
+            <span class="node">Planet positions</span><span class="arrow">⇢</span>
+            <span class="node">Mood</span>
+            <span style="color:var(--label-tertiary); font-weight:400;">(negligible / unproven — no edge in this model)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="tag established">Live correlation</span>
+        <h3>Two correlations, very different meaning</h3>
+        <div class="r-line">
+          <span class="rval" id="rAstro" style="color:var(--orange)">—</span>
+          <span>Astrology signal ↔ Mood</span>
+          <div class="r-bar"><i id="bAstro" style="background:var(--orange); width:0%"></i></div>
+        </div>
+        <div class="r-line">
+          <span class="rval" id="rSun" style="color:var(--accent)">—</span>
+          <span>Cosmic signal ↔ Mood</span>
+          <div class="r-bar"><i id="bSun" style="background:var(--accent); width:0%"></i></div>
+        </div>
+        <p style="margin-top:var(--space-md);">
+          Crank up <b>Noise</b> or hit <b>Shuffle planet phases</b>: the astrology correlation
+          jumps around wildly (sometimes strongly positive, sometimes negative) from pure chance.
+          The Sun's correlation stays high — because it is the real causal driver.
+        </p>
+      </div>
+
+      <div class="panel">
+        <span class="tag speculative">Overfitting</span>
+        <h3>The Barnum oracle: vague enough to always "fit"</h3>
+        <p>
+          A symbol system with fuzzy rules can "explain" any outcome. That is overfitting, not
+          prediction. Here is a horoscope generated from the current planet angles:
+        </p>
+        <div class="oracle-box" id="oracle">Click "new reading"…</div>
+        <button class="primary" id="reading">New reading</button>
+      </div>
+
+      <div class="panel">
+        <span class="tag core">Evidence ladder</span>
+        <h3>Where each claim actually stands</h3>
+        <div class="ladder">
+          <div class="tier t1"><span class="name">Established</span><span class="desc">Moon → tides; sunlight → melatonin → circadian rhythm</span></div>
+          <div class="tier t2"><span class="name">Frontier</span><span class="desc">Geomagnetic activity ↔ cardiovascular events; lunar cycle ↔ sleep</span></div>
+          <div class="tier t3"><span class="name">Speculative</span><span class="desc">Planet positions → personality, mood, career</span></div>
+        </div>
+      </div>
+
+      <div class="panel wide">
+        <span class="tag core">Survivorship bias</span>
+        <h3>We remember the hits, forget the misses</h3>
+        <p>
+          Below are 24 past "predictions" this model made. Toggle the filter to see only the hits —
+          which is exactly what a fortune-teller shows you. The misses are quietly discarded.
+        </p>
+        <div class="preds" id="preds"></div>
+        <div class="ctl-row" style="justify-content:flex-start; gap:8px; flex-wrap:wrap;">
+          <button class="ghost" id="filterHits">Show only hits</button>
+          <button class="ghost" id="filterAll">Show all</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer>
+  A thought experiment, not a validation of any astrological system. Inspired by
+  <a href="https://dev.to/sanyaduan/zhan-xing-zhu-ba-gua-yu-fu-za-xi-tong-xun-zhao-mi-xin-yu-ke-xue-zhi-jian-de-qiao-liang-35hm" target="_blank" rel="noopener">占星术、八卦与复杂系统</a>.
+  Theory: complex systems, chronobiology, ReAct multi-agent systems. The model is schematic (not to scale);
+  planetary causal weights are deliberately zero here to make the point sharply.
+</footer>
+
+<script>
+"use strict";
+
+/* ================= Theme ================= */
+const root = document.documentElement;
+const themeBtn = document.getElementById("themeBtn");
+function applyTheme(t) {
+  root.setAttribute("data-theme", t);
+  themeBtn.textContent = t === "dark" ? "☾" : "☀";
+  localStorage.setItem("aasb-theme", t);
+}
+(function initTheme() {
+  const saved = localStorage.getItem("aasb-theme");
+  applyTheme(saved || "dark");
+})();
+themeBtn.addEventListener("click", () => {
+  applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+});
+
+/* ================= Tabs ================= */
+const tabBtns = document.querySelectorAll(".tabs button");
+const tabSim = document.getElementById("tab-sim");
+const tabSkeptic = document.getElementById("tab-skeptic");
+tabBtns.forEach(b => b.addEventListener("click", () => {
+  tabBtns.forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  const t = b.dataset.tab;
+  tabSim.hidden = t !== "sim";
+  tabSkeptic.hidden = t !== "skeptic";
+  if (t === "skeptic") drawSkepticSVG();
+}));
+
+/* ================= Model ================= */
+const T_DAY = 5;             // sim-seconds per day/night cycle
+const T_MOON = 30;           // moon's "phase" period (schematic)
+
+const BODIES = [
+  { name:"Sun",     isSun:true, orbit:0,   period:0,    size:30, color:"#FFD60A", weight:1.0,  moon:false },
+  { name:"Mercury", isSun:false,orbit:52,  period:2.4,  size:3.4, color:"#98989D", weight:0.05, moon:false },
+  { name:"Venus",   isSun:false,orbit:78,  period:4.8,  size:5.0, color:"#E8C39E", weight:0.09, moon:false },
+  { name:"Earth",   isSun:false,orbit:106, period:7.2,  size:5.2, color:"#4A90D9", weight:0.12, moon:true  },
+  { name:"Mars",    isSun:false,orbit:134, period:11.5, size:4.0, color:"#E07B54", weight:0.07, moon:false },
+  { name:"Jupiter", isSun:false,orbit:172, period:28,   size:11,  color:"#D8B98A", weight:0.14, moon:false },
+  { name:"Saturn",  isSun:false,orbit:214, period:50,   size:9.5, color:"#E5D3A8", weight:0.10, moon:false },
+];
+
+const NODE_DEFS = [
+  { key:"scn",  name:"SCN (circadian)", color:"#0A84FF" },
+  { key:"mel",  name:"Melatonin",        color:"#5E5CE6" },
+  { key:"cor",  name:"Cortisol",         color:"#FF9F0A" },
+  { key:"mood", name:"Mood",             color:"#FF375F" },
+  { key:"eng",  name:"Energy",           color:"#30D158" },
+  { key:"imm",  name:"Immune",           color:"#BF5AF2" },
+];
+const IDX = { scn:0, mel:1, cor:2, mood:3, eng:4, imm:5 };
+
+// Weight matrix W[j][i] = influence of node i on node j. Bias b_j, time constant tau_j.
+const BIAS   = { 0:-0.4, 1:1.4, 2:-0.3, 3:0.4, 4:0.3, 5:0.6 };
+const TAU    = { 0:0.30, 1:0.85, 2:0.80, 3:0.60, 4:0.50, 5:2.0 };
+const W = (() => {
+  const m = Array.from({length:6}, () => new Array(6).fill(0));
+  m[IDX.mel][IDX.scn]  = -1.7;   // light suppresses melatonin
+  m[IDX.cor][IDX.scn]  =  1.3;   // SCN drives cortisol
+  m[IDX.mood][IDX.scn] =  0.55;  // light lifts mood (SAD)
+  m[IDX.mood][IDX.mel] = -0.45;  // sleepiness dampens mood
+  m[IDX.mood][IDX.cor] = -0.20;  // stress lowers mood
+  m[IDX.mood][IDX.eng] =  0.20;  // energy feeds mood
+  m[IDX.eng][IDX.cor]  =  0.80;  // cortisol boosts alertness
+  m[IDX.eng][IDX.mel]  = -0.70;  // melatonin reduces energy
+  m[IDX.eng][IDX.mood] =  0.30;  // good mood → energy
+  m[IDX.imm][IDX.cor]  = -0.50;  // chronic stress suppresses immune
+  return m;
+})();
+
+const EDGES = [
+  [IDX.scn, IDX.mel], [IDX.scn, IDX.cor], [IDX.scn, IDX.mood],
+  [IDX.mel, IDX.mood], [IDX.mel, IDX.eng], [IDX.cor, IDX.mood],
+  [IDX.cor, IDX.eng], [IDX.cor, IDX.imm], [IDX.eng, IDX.mood],
+];
+
+// Human node layout (logical coords, stage is 1280x620)
+const NODE_POS = {
+  0:[950,190], 1:[800,258], 2:[1100,258], 3:[812,402], 4:[1088,402], 5:[950,486],
+};
+
+const state = {
+  t: 0,
+  speed: 1,
+  coupling: 0.7,
+  noise: 0,
+  running: true,
+  skeptic: false,
+  a: new Array(6).fill(0.5),
+  angles: BODIES.map((b,i) => (i * 1.7) % (Math.PI*2)),
+  moonAngle: 0,
+  lastSample: 0,
+};
+
+/* ================= Signals ================= */
+function light(t) { return 0.5 + 0.5 * Math.sin((2*Math.PI*t)/T_DAY); }
+
+function planetSignal() {
+  let s = 0;
+  for (let i = 1; i < BODIES.length; i++) {
+    s += BODIES[i].weight * Math.sin(state.angles[i]);
+  }
+  s += 0.18 * Math.sin(state.moonAngle); // moon
+  return s; // roughly [-0.7, 0.7]
+}
+
+function cosmicSignal(t) {
+  // what a naive observer measures as "the sky": sun-dominant + weak planetary
+  return 0.78 * light(t) + 0.22 * (planetSignal() / 1.4 * 2) * 0.5;
+}
+
+/* ================= Dynamics ================= */
+function sigmoid(x) { return 1 / (1 + Math.exp(-4 * x)); }
+
+function step(dt) {
+  const a = state.a;
+  const coupling = state.coupling;
+  const noise = state.noise;
+  const L = light(state.t);
+
+  // external inputs (only established paths have causal weight)
+  const ext = new Array(6).fill(0);
+  ext[IDX.scn] = coupling * L;       // light → SCN
+  ext[IDX.mood] = 0.12 * coupling * L; // light directly → mood (SAD), small
+
+  const next = new Array(6);
+  for (let j = 0; j < 6; j++) {
+    let net = BIAS[j] + ext[j];
+    for (let i = 0; i < 6; i++) net += W[j][i] * a[i];
+    if (noise > 0) net += (Math.random()*2 - 1) * noise * 1.4;
+    const target = sigmoid(net);
+    next[j] = a[j] + (target - a[j]) * (dt / TAU[j]);
+  }
+  state.a = next;
+
+  // advance orbits
+  for (let i = 0; i < BODIES.length; i++) {
+    if (BODIES[i].period > 0) state.angles[i] += (2*Math.PI*dt) / BODIES[i].period;
+  }
+  state.moonAngle += (2*Math.PI*dt) / 1.7;
+  state.t += dt;
+}
+
+/* ================= History buffers ================= */
+const HIST = { cosmic:[], astro:[], mood:[], light:[], scn:[] };
+const MAX_HIST = 360;
+function record() {
+  const push = (arr, v) => { arr.push(v); if (arr.length > MAX_HIST) arr.shift(); };
+  push(HIST.cosmic, cosmicSignal(state.t));
+  push(HIST.astro,  planetSignal());
+  push(HIST.mood,   state.a[IDX.mood]);
+  push(HIST.light,  light(state.t));
+  push(HIST.scn,    state.a[IDX.scn]);
+}
+
+function pearson(x, y) {
+  const n = Math.min(x.length, y.length);
+  if (n < 8) return 0;
+  const x0 = x.slice(-n), y0 = y.slice(-n);
+  let sx=0, sy=0, sxx=0, syy=0, sxy=0;
+  for (let i=0;i<n;i++){ sx+=x0[i]; sy+=y0[i]; sxx+=x0[i]*x0[i]; syy+=y0[i]*y0[i]; sxy+=x0[i]*y0[i]; }
+  const mx=sx/n, my=sy/n;
+  const cov = sxy/n - mx*my;
+  const vx = sxx/n - mx*mx, vy = syy/n - my*my;
+  const den = Math.sqrt(vx*vy);
+  return den === 0 ? 0 : cov/den;
+}
+
+/* ================= Canvas rendering ================= */
+const stage = document.getElementById("stage");
+const sctx = stage.getContext("2d");
+const chart = document.getElementById("chart");
+const cctx = chart.getContext("2d");
+
+let Wpx = 0, Hpx = 0, scale = 1, dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  Wpx = stage.clientWidth || stage.parentElement.clientWidth;
+  Hpx = Math.round(Wpx * 620/1280);
+  stage.style.height = Hpx + "px";
+  stage.width = Wpx * dpr;
+  stage.height = Hpx * dpr;
+  scale = Wpx / 1280;
+
+  chart.width = (chart.clientWidth || chart.parentElement.clientWidth) * dpr;
+  chart.height = 200 * dpr;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// precompute stars
+const stars = Array.from({length:160}, () => ({
+  x: Math.random(), y: Math.random()*0.98, r: Math.random()*1.2+0.3, tw: Math.random()*6.28,
+}));
+
+function drawStars(ctx) {
+  for (const s of stars) {
+    const a = 0.25 + 0.55*Math.abs(Math.sin(s.tw));
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.beginPath();
+    ctx.arc(s.x*1280, s.y*620, s.r, 0, 6.283);
+    ctx.fill();
+  }
+}
+
+function bodyXY(i) {
+  const b = BODIES[i];
+  const cx = 330, cy = 310;
+  const x = cx + b.orbit * Math.cos(state.angles[i]);
+  const y = cy + b.orbit * Math.sin(state.angles[i]);
+  return { x, y };
+}
+
+function drawCelestial(ctx) {
+  const cx = 330, cy = 310;
+  // orbital rings
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < BODIES.length; i++) {
+    ctx.beginPath(); ctx.arc(cx, cy, BODIES[i].orbit, 0, 6.283); ctx.stroke();
+  }
+  // sun glow
+  const glow = ctx.createRadialGradient(cx,cy,0,cx,cy,90);
+  glow.addColorStop(0,"rgba(255,214,10,0.55)");
+  glow.addColorStop(1,"rgba(255,214,10,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(cx,cy,90,0,6.283); ctx.fill();
+
+  // planets
+  for (let i = 1; i < BODIES.length; i++) {
+    const b = BODIES[i];
+    const p = bodyXY(i);
+    const alpha = state.skeptic ? 0.25 : 1;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, b.size, 0, 6.283); ctx.fill();
+    // moon
+    if (b.moon) {
+      const mx = p.x + 13*Math.cos(state.moonAngle);
+      const my = p.y + 13*Math.sin(state.moonAngle);
+      ctx.fillStyle = "#C7C7CC";
+      ctx.beginPath(); ctx.arc(mx, my, 2.2, 0, 6.283); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (!state.skeptic) {
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = "center";
+      ctx.fillText(b.name, p.x, p.y - b.size - 6);
+    }
+  }
+  // sun
+  ctx.fillStyle = "#FFD60A";
+  ctx.beginPath(); ctx.arc(cx, cy, BODIES[0].size, 0, 6.283); ctx.fill();
+  ctx.fillStyle = "#FFF8D6";
+  ctx.font = "600 11px " + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = "center";
+  ctx.fillText("Sun", cx, cy - 40);
+}
+
+function drawHuman(ctx) {
+  const a = state.a;
+  // edges
+  for (const [i,j] of EDGES) {
+    const p1 = NODE_POS[i], p2 = NODE_POS[j];
+    const w = W[j][i];
+    ctx.strokeStyle = w < 0 ? "rgba(255,99,90,0.35)" : "rgba(10,132,255,0.35)";
+    ctx.lineWidth = Math.min(2.5, 0.6 + Math.abs(w)*0.9);
+    ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.stroke();
+  }
+  // nodes
+  for (let i = 0; i < 6; i++) {
+    const p = NODE_POS[i];
+    const v = a[i];
+    const r = 12 + v*8;
+    const d = NODE_DEFS[i];
+    const g = ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],r*2.2);
+    g.addColorStop(0, d.color + "88");
+    g.addColorStop(1, d.color + "00");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(p[0],p[1],r*2.2,0,6.283); ctx.fill();
+
+    ctx.fillStyle = d.color;
+    ctx.beginPath(); ctx.arc(p[0],p[1],r,0,6.283); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "12px " + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = "center";
+    ctx.fillText(d.name, p[0], p[1] - r - 8);
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+    ctx.fillText(v.toFixed(2), p[0], p[1] + r + 14);
+  }
+}
+
+function drawBridge(ctx) {
+  const t = performance.now()/1000;
+  const y0 = 310;
+  // channel
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(560, y0); ctx.lineTo(790, y0); ctx.stroke();
+
+  const strength = state.coupling;
+  const n = 5;
+  for (let k = 0; k < n; k++) {
+    const ph = (t*0.5 + k/n) % 1;
+    const x = 560 + ph * 230;
+    const alpha = (1-ph) * (0.35 + 0.5*strength);
+    ctx.fillStyle = `rgba(10,132,255,${alpha})`;
+    ctx.beginPath(); ctx.arc(x, y0, 3, 0, 6.283); ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.font = "600 11px " + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = "center";
+  ctx.fillText("signal", 675, y0 - 14);
+}
+
+function drawLabels(ctx) {
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "600 12px " + getComputedStyle(document.body).fontFamily;
+  ctx.fillText("MACRO — CELESTIAL SYSTEM", 24, 32);
+  ctx.fillText("MICRO — HUMAN SYSTEM", 800, 32);
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
+  ctx.fillText("each agent emits a signal", 24, 52);
+  ctx.fillText("nested coupled agents → emergent behavior", 800, 52);
+}
+
+function renderStage() {
+  sctx.setTransform(dpr*scale, 0, 0, dpr*scale, 0, 0);
+  sctx.clearRect(0,0,1280,620);
+  drawStars(sctx);
+  drawCelestial(sctx);
+  drawBridge(sctx);
+  drawHuman(sctx);
+  drawLabels(sctx);
+}
+
+/* ================= Chart rendering ================= */
+function renderChart() {
+  const w = chart.width, h = chart.height;
+  cctx.setTransform(1,0,0,1,0,0);
+  cctx.clearRect(0,0,w,h);
+  const padL = 34, padR = 10, padT = 10, padB = 22;
+  const iw = w - padL - padR, ih = h - padT - padB;
+
+  // grid
+  cctx.strokeStyle = "rgba(128,128,128,0.15)";
+  cctx.lineWidth = 1;
+  cctx.textAlign = "right";
+  cctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+  for (let g = 0; g <= 4; g++) {
+    const y = padT + (g/4)*ih;
+    cctx.beginPath(); cctx.moveTo(padL,y); cctx.lineTo(w-padR,y); cctx.stroke();
+    cctx.fillStyle = "rgba(128,128,128,0.5)";
+    cctx.fillText((1 - g/4).toFixed(2), padL-6, y+3);
+  }
+
+  const drawLine = (arr, color, dash) => {
+    const n = arr.length;
+    if (n < 2) return;
+    cctx.strokeStyle = color;
+    cctx.lineWidth = 2;
+    cctx.setLineDash(dash || []);
+    cctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = padL + (i/(MAX_HIST-1))*iw;
+      const y = padT + (1 - arr[i])*ih;
+      if (i===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+    }
+    cctx.stroke();
+    cctx.setLineDash([]);
+  };
+
+  drawLine(HIST.cosmic, "#2997FF");
+  drawLine(HIST.mood,   "#FF375F");
+  drawLine(HIST.astro,  "#FF9F0A", [5,4]);
+}
+
+/* ================= Readout updates ================= */
+const el = id => document.getElementById(id);
+function updateReadouts() {
+  const a = state.a;
+  const mood = a[IDX.mood], energy = a[IDX.eng], mel = a[IDX.mel];
+  const sync = pearson(HIST.scn, HIST.light);
+  const rCorr = pearson(HIST.cosmic, HIST.mood);
+  const rAstro = pearson(HIST.astro, HIST.mood);
+
+  const setBar = (id, v) => { el(id).style.width = (v*100).toFixed(1)+"%"; };
+  const setVal = (id, v) => { el(id).textContent = v.toFixed(2); };
+
+  setVal("rMood", mood); setBar("bMood", mood);
+  setVal("rEnergy", energy); setBar("bEnergy", energy);
+  setVal("rMel", mel); setBar("bMel", mel);
+  setVal("rSync", sync); setBar("bSync", Math.max(0, sync));
+  setVal("rCorr", rCorr); setBar("bCorr", (rCorr+1)/2);
+
+  // skeptic lab live r
+  if (!tabSkeptic.hidden) {
+    el("rAstro").textContent = (rAstro>=0?"+":"") + rAstro.toFixed(2);
+    el("rSun").textContent   = (rCorr>=0?"+":"") + rCorr.toFixed(2);
+    el("bAstro").style.width = ((rAstro+1)/2*100).toFixed(1)+"%";
+    el("bSun").style.width   = ((rCorr+1)/2*100).toFixed(1)+"%";
+  }
+}
+
+/* ================= Main loop ================= */
+let lastTs = 0;
+function loop(ts) {
+  const dtReal = Math.min(0.05, (ts - lastTs)/1000 || 0.016);
+  lastTs = ts;
+  if (state.running) {
+    step(dtReal * state.speed);
+    if (state.t - state.lastSample >= 0.06) {
+      record();
+      state.lastSample = state.t;
+    }
+  }
+  renderStage();
+  renderChart();
+  updateReadouts();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ================= Controls ================= */
+el("speed").addEventListener("input", e => {
+  state.speed = parseFloat(e.target.value);
+  el("vSpeed").textContent = state.speed.toFixed(2) + "×";
+});
+el("coupling").addEventListener("input", e => {
+  state.coupling = parseFloat(e.target.value);
+  el("vCoupling").textContent = state.coupling.toFixed(2);
+});
+el("noise").addEventListener("input", e => {
+  state.noise = parseFloat(e.target.value);
+  el("vNoise").textContent = state.noise.toFixed(2);
+});
+el("skeptic").addEventListener("change", e => {
+  state.skeptic = e.target.checked;
+  el("skepticBadge").hidden = !state.skeptic;
+});
+el("shuffle").addEventListener("click", () => {
+  for (let i = 0; i < BODIES.length; i++) state.angles[i] = Math.random()*6.283;
+  state.moonAngle = Math.random()*6.283;
+});
+el("pause").addEventListener("click", () => {
+  state.running = !state.running;
+  el("pause").textContent = state.running ? "Pause" : "Resume";
+});
+el("reset").addEventListener("click", () => {
+  state.t = 0;
+  state.a = new Array(6).fill(0.5);
+  state.angles = BODIES.map((b,i) => (i*1.7)%(Math.PI*2));
+  state.moonAngle = 0;
+  for (const k in HIST) HIST[k].length = 0;
+});
+
+/* ================= Skeptic Lab widgets ================= */
+const BARNUMS = [
+  "You have a great deal of unused capacity which you have not turned to your advantage.",
+  "You have a tendency to be critical of yourself.",
+  "At times you are extroverted and sociable, while at other times you are introverted and reserved.",
+  "Disciplined and self-controlled on the outside, you tend to be worrisome and insecure inside.",
+  "You prefer a certain amount of change and variety, and become dissatisfied when hemmed in by restrictions.",
+  "You pride yourself on being an independent thinker, and do not accept others' claims without proof.",
+  "While you have some personality weaknesses, you are generally able to compensate for them.",
+  "Some of your aspirations tend to be rather unrealistic.",
+  "Security is one of your major goals in life.",
+  "You have a strong need for other people to like and admire you.",
+];
+const PLANET_WORDS = ["the Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "your rising sign", "the 7th house", "Neptune's trine"];
+
+function shuffle(arr){ const c = arr.slice(); for(let i=c.length-1;i>0;i--){const j=(Math.random()*(i+1))|0; [c[i],c[j]]=[c[j],c[i]];} return c; }
+
+function newReading() {
+  const p = shuffle(PLANET_WORDS).slice(0,3);
+  const b = shuffle(BARNUMS).slice(0,2);
+  const intro = `With ${p[0]} moving through ${p[1]} and ${p[2]} in aspect —`;
+  el("oracle").innerHTML =
+    `<span class="planets">${intro}</span><br><br>${b[0]}<br><br>${b[1]}`;
+}
+el("reading").addEventListener("click", newReading);
+
+// survivorship bias demo
+const predsEl = el("preds");
+let preds = [];
+function buildPreds() {
+  predsEl.innerHTML = "";
+  preds = [];
+  for (let i = 0; i < 24; i++) {
+    const hit = Math.random() < 0.25;
+    preds.push(hit);
+    const s = document.createElement("span");
+    s.className = hit ? "hit" : "miss";
+    s.textContent = hit ? "✓" : "×";
+    predsEl.appendChild(s);
+  }
+}
+buildPreds();
+el("filterHits").addEventListener("click", () => {
+  [...predsEl.children].forEach((c,i) => { c.style.opacity = preds[i] ? "1" : "0.12"; });
+});
+el("filterAll").addEventListener("click", () => {
+  [...predsEl.children].forEach(c => c.style.opacity = "1");
+});
+
+function drawSkepticSVG() {
+  // placeholder hook — the causal graph is rendered in HTML; nothing canvas-based needed.
+  newReading();
+}
+</script>
+</body>
+</html>
