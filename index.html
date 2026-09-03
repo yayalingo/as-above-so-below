@@ -3,1204 +3,786 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>As Above, So Below</title>
+<title>As Above, So Below — Nested Complex Systems</title>
 <style>
   /* ================= Design Tokens (Apple Design System) ================= */
   :root {
-    --space-xxs: 4px;
-    --space-xs: 8px;
-    --space-sm: 12px;
-    --space-md: 16px;
-    --space-lg: 24px;
-    --space-xl: 32px;
-
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 18px;
-    --radius-pill: 9999px;
-
+    --space-xxs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
+    --space-lg: 24px; --space-xl: 32px;
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px; --radius-pill: 9999px;
     --font-display: "SF Pro Display", system-ui, -apple-system, "Inter", "Segoe UI", sans-serif;
     --font-text: "SF Pro Text", system-ui, -apple-system, "Inter", "Segoe UI", sans-serif;
-
-    --accent: #007AFF;
-    --accent-focus: #0071E3;
-    --accent-on-dark: #2997FF;
-
+    --accent: #007AFF; --accent-focus: #0071E3; --accent-on-dark: #2997FF;
     --shadow-product: 0 3px 30px rgba(0,0,0,0.22);
     --blur-glass: saturate(180%) blur(20px);
-
-    --green: #30D158;
-    --red: #FF453A;
-    --orange: #FF9F0A;
-    --yellow: #FFD60A;
-    --pink: #FF375F;
-    --indigo: #5E5CE6;
-    --purple: #BF5AF2;
-    --cyan: #64D2FF;
-    --blue: #0A84FF;
-
-    /* motion (interaction-design) */
+    --green: #30D158; --red: #FF453A; --orange: #FF9F0A; --yellow: #FFD60A;
+    --pink: #FF375F; --indigo: #5E5CE6; --purple: #BF5AF2; --cyan: #64D2FF; --blue: #0A84FF;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-
   :root, [data-theme="light"] {
-    --bg: #FFFFFF;
-    --bg-secondary: #F5F5F7;
-    --bg-tertiary: #EAECEF;
-    --label: #1D1D1F;
-    --label-secondary: #6E6E73;
-    --label-tertiary: #8E8E93;
-    --separator: rgba(60,60,67,0.29);
-    --card: #FFFFFF;
-    --card-border: rgba(0,0,0,0.08);
+    --bg: #FFFFFF; --bg-secondary: #F5F5F7; --bg-tertiary: #EAECEF;
+    --label: #1D1D1F; --label-secondary: #6E6E73; --label-tertiary: #8E8E93;
+    --separator: rgba(60,60,67,0.29); --card: #FFFFFF; --card-border: rgba(0,0,0,0.08);
+    --canvas-bg: #FFFFFF;
+    --node-label: #1D1D1F;
+    --edge: rgba(0,0,0,0.18);
+    --ghost: rgba(0,0,0,0.28);
   }
-
   [data-theme="dark"] {
-    --bg: #000000;
-    --bg-secondary: #1C1C1E;
-    --bg-tertiary: #2C2C2E;
-    --label: #FFFFFF;
-    --label-secondary: rgba(235,235,245,0.60);
-    --label-tertiary: rgba(235,235,245,0.30);
-    --separator: rgba(84,84,88,0.65);
-    --card: #1C1C1E;
-    --card-border: rgba(255,255,255,0.08);
+    --bg: #000000; --bg-secondary: #1C1C1E; --bg-tertiary: #2C2C2E;
+    --label: #FFFFFF; --label-secondary: rgba(235,235,245,0.62); --label-tertiary: rgba(235,235,245,0.32);
+    --separator: rgba(84,84,88,0.65); --card: #1C1C1E; --card-border: rgba(255,255,255,0.08);
+    --canvas-bg: #000000;
+    --node-label: #FFFFFF;
+    --edge: rgba(255,255,255,0.16);
+    --ghost: rgba(255,255,255,0.30);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
+  html, body { height: 100%; overflow: hidden; }
   body {
-    font-family: var(--font-text);
-    font-size: 17px;
-    line-height: 1.47;
-    letter-spacing: -0.4px;
-    color: var(--label);
-    background: var(--bg);
-    min-height: 100vh;
-    transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out);
+    font-family: var(--font-text); background: var(--canvas-bg); color: var(--label);
+    -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none;
   }
 
-  button { font-family: inherit; }
+  /* ================= Canvas ================= */
+  #stage { position: fixed; inset: 0; display: block; cursor: grab; touch-action: none; }
+  #stage.grabbing { cursor: grabbing; }
+  #stage.diveable { cursor: pointer; }
 
-  /* ================= Nav ================= */
-  nav {
-    position: sticky;
-    top: 0;
-    z-index: 60;
-    backdrop-filter: var(--blur-glass);
-    -webkit-backdrop-filter: var(--blur-glass);
-    background: color-mix(in srgb, var(--bg) 72%, transparent);
-    border-bottom: 0.5px solid var(--separator);
+  /* ================= Top bar ================= */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px;
+    display: flex; align-items: center; gap: var(--space-sm);
+    padding: 0 var(--space-lg);
+    background: var(--blur-glass); background-color: color-mix(in srgb, var(--bg) 62%, transparent);
+    border-bottom: 1px solid var(--separator);
+    z-index: 10;
   }
-  .nav-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--space-sm) var(--space-md);
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-  }
-  .brand { display: flex; align-items: center; gap: var(--space-sm); min-width: 0; }
-  .brand .glyph { font-size: 20px; line-height: 1; color: var(--accent); user-select: none; }
-  .brand .name {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.2px;
-    white-space: nowrap;
-  }
-  .nav-actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-xs); }
-
+  #brand { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+  #breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--label-secondary); margin-left: var(--space-sm); }
+  #breadcrumb .crumb { cursor: pointer; color: var(--label-secondary); transition: color .2s var(--ease-out); }
+  #breadcrumb .crumb:hover { color: var(--accent); }
+  #breadcrumb .crumb.current { color: var(--label); font-weight: 600; }
+  #breadcrumb .sep { opacity: .4; }
+  .spacer { flex: 1; }
   .icon-btn {
-    border: none;
-    background: transparent;
-    color: var(--label);
-    width: 38px;
-    height: 38px;
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    transition: background 0.15s var(--ease-out), transform 0.15s var(--spring);
+    width: 36px; height: 36px; border-radius: var(--radius-pill); border: none; background: transparent;
+    color: var(--label-secondary); cursor: pointer; display: grid; place-items: center;
+    transition: background .2s var(--ease-out), color .2s var(--ease-out), transform .15s var(--spring);
   }
-  .icon-btn:hover { background: var(--bg-tertiary); }
-  .icon-btn:active { transform: scale(0.9); }
+  .icon-btn:hover { background: var(--bg-tertiary); color: var(--label); }
+  .icon-btn:active { transform: scale(.92); }
   .icon-btn svg { width: 19px; height: 19px; }
-  .icon-btn.active { color: var(--accent); }
 
-  /* ================= Main ================= */
-  main { max-width: 1200px; margin: 0 auto; padding: var(--space-md) var(--space-md) var(--space-xl); }
-
-  /* ================= Stage ================= */
-  .stage-wrap {
-    position: relative;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-product);
-    background: #06060f;
+  /* ================= Legend ================= */
+  #legend {
+    position: fixed; left: var(--space-lg); bottom: var(--space-lg); z-index: 10;
+    display: flex; flex-direction: column; gap: 8px; padding: var(--space-sm) var(--space-md);
+    background: var(--blur-glass); background-color: color-mix(in srgb, var(--bg) 70%, transparent);
+    border: 1px solid var(--separator); border-radius: var(--radius-lg);
+    font-size: 12px; color: var(--label-secondary);
+    transition: opacity .25s var(--ease-out), transform .25s var(--ease-out);
   }
-  canvas#stage { display: block; width: 100%; height: auto; touch-action: none; }
+  #legend.hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+  #legend .legend-title { font-weight: 600; color: var(--label); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .legend-row { display: flex; align-items: center; gap: 8px; cursor: pointer; opacity: 1; transition: opacity .2s; }
+  .legend-row.off { opacity: .28; }
+  .legend-row .swatch { width: 22px; height: 0; border-top: 3px solid; border-top-style: solid; flex: none; }
+  .legend-row .swatch.dashed { border-top-style: dashed; }
+  .legend-row .swatch.dotted { border-top-style: dotted; }
 
-  .stage-hint {
-    position: absolute;
-    top: var(--space-md);
-    right: var(--space-md);
-    color: rgba(255,255,255,0.4);
-    font-size: 12.5px;
-    letter-spacing: 0.3px;
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 1.5s var(--ease-out) 2.5s;
+  /* ================= Hint ================= */
+  #hint {
+    position: fixed; right: var(--space-lg); bottom: var(--space-lg); z-index: 10;
+    font-size: 12px; color: var(--label-tertiary); text-align: right; line-height: 1.6;
+    transition: opacity .4s var(--ease-out);
   }
-  .stage-hint.fade { opacity: 0; }
+  #hint.fade { opacity: 0; }
+  #hint .key { display: inline-block; padding: 0 5px; border: 1px solid var(--separator); border-radius: 5px; font-size: 10px; }
 
   /* ================= Tooltip ================= */
   #tooltip {
-    position: fixed;
-    z-index: 100;
-    max-width: 260px;
-    padding: var(--space-xs) var(--space-sm);
-    background: rgba(28,28,30,0.92);
-    color: #fff;
-    font-size: 13px;
-    line-height: 1.4;
-    letter-spacing: 0;
-    border-radius: var(--radius-sm);
-    border: 0.5px solid rgba(255,255,255,0.12);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(4px);
-    transition: opacity 0.12s var(--ease-out), transform 0.12s var(--ease-out);
+    position: fixed; z-index: 20; pointer-events: none; max-width: 300px;
+    padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md);
+    background: var(--blur-glass); background-color: color-mix(in srgb, var(--bg-secondary) 86%, transparent);
+    border: 1px solid var(--separator); box-shadow: var(--shadow-product);
+    opacity: 0; transform: translateY(4px) scale(.98); transition: opacity .15s var(--ease-out), transform .15s var(--ease-out);
   }
-  #tooltip.show { opacity: 1; transform: translateY(0); }
-  #tooltip .tt-name { font-weight: 600; color: #fff; }
-  #tooltip .tt-sub { color: rgba(255,255,255,0.62); margin-top: 2px; }
-  #tooltip .tt-tag { display: inline-block; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; padding: 1px 6px; border-radius: var(--radius-pill); margin-bottom: 4px; }
-  .tt-tag.est { background: rgba(10,132,255,0.25); color: #64D2FF; }
-  .tt-tag.unp { background: rgba(255,55,95,0.22); color: #FF8A9B; }
+  #tooltip.show { opacity: 1; transform: translateY(0) scale(1); }
+  #tooltip .tt-name { font-weight: 600; font-size: 14px; color: var(--label); }
+  #tooltip .tt-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: var(--radius-pill); font-size: 10px; font-weight: 600; vertical-align: 2px; }
+  #tooltip .tt-rel { font-size: 12px; color: var(--label-secondary); margin-top: 4px; }
+  #tooltip .tt-desc { font-size: 12px; color: var(--label-tertiary); margin-top: 4px; line-height: 1.45; }
+  #tooltip .tt-dive { margin-top: 6px; font-size: 11px; color: var(--accent); font-weight: 500; }
 
-  /* ================= Dock ================= */
-  .dock {
-    position: absolute;
-    bottom: var(--space-md);
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px;
-    background: rgba(28,28,30,0.72);
-    backdrop-filter: var(--blur-glass);
-    -webkit-backdrop-filter: var(--blur-glass);
-    border: 0.5px solid rgba(255,255,255,0.1);
-    border-radius: var(--radius-pill);
+  /* ================= Help sheet ================= */
+  #help {
+    position: fixed; inset: 0; z-index: 30; display: grid; place-items: center;
+    background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; transition: opacity .25s var(--ease-out);
   }
-  .dock .icon-btn { color: #fff; width: 36px; height: 36px; }
-  .dock .icon-btn:hover { background: rgba(255,255,255,0.12); }
-  .dock .icon-btn.active { background: rgba(10,132,255,0.3); color: #fff; }
-  .dock .sep { width: 1px; height: 22px; background: rgba(255,255,255,0.14); margin: 0 4px; }
-
-  /* dock settings popover */
-  .dock-panel {
-    position: absolute;
-    bottom: calc(100% + 12px);
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-    width: 260px;
-    padding: var(--space-md);
-    background: rgba(28,28,30,0.9);
-    backdrop-filter: var(--blur-glass);
-    -webkit-backdrop-filter: var(--blur-glass);
-    border: 0.5px solid rgba(255,255,255,0.12);
-    border-radius: var(--radius-lg);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s var(--ease-out), transform 0.25s var(--spring);
+  #help.open { opacity: 1; pointer-events: auto; }
+  #help .sheet {
+    width: min(520px, calc(100vw - 48px)); padding: var(--space-xl); border-radius: var(--radius-lg);
+    background: var(--card); border: 1px solid var(--separator); box-shadow: var(--shadow-product);
+    transform: scale(.96) translateY(8px); transition: transform .25s var(--spring);
   }
-  .dock-panel.open { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-  .dock-panel .ctl { margin-bottom: var(--space-sm); }
-  .dock-panel .ctl:last-child { margin-bottom: 0; }
-  .dock-panel .ctl label {
-    display: flex; justify-content: space-between;
-    color: rgba(255,255,255,0.85);
-    font-size: 12.5px; font-weight: 500; letter-spacing: 0;
-    margin-bottom: 6px;
-  }
-  .dock-panel .ctl label .val { color: rgba(255,255,255,0.45); font-variant-numeric: tabular-nums; }
-  input[type="range"] {
-    -webkit-appearance: none; appearance: none;
-    width: 100%; height: 5px;
-    border-radius: var(--radius-pill);
-    background: rgba(255,255,255,0.18);
-    outline: none;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #fff; border: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: transform 0.12s var(--spring);
-  }
-  input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.25); }
-
-  /* ================= Readouts ================= */
-  .readouts {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: var(--space-sm);
-    margin: var(--space-md) 0;
-  }
-  .readout {
-    position: relative;
-    background: var(--card);
-    border: 0.5px solid var(--card-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-sm) var(--space-md);
-    cursor: pointer;
-    transition: transform 0.18s var(--spring), border-color 0.18s var(--ease-out);
-    overflow: hidden;
-  }
-  .readout:hover { transform: translateY(-2px); }
-  .readout:active { transform: scale(0.97); }
-  .readout.focus { border-color: var(--accent); }
-  .readout .dot { width: 8px; height: 8px; border-radius: 50%; margin-bottom: 6px; }
-  .readout .v {
-    font-family: var(--font-display);
-    font-size: 26px; font-weight: 600; letter-spacing: -0.5px;
-    font-variant-numeric: tabular-nums;
-  }
-  .readout .bar { height: 4px; border-radius: var(--radius-pill); background: var(--bg-tertiary); margin-top: var(--space-xs); overflow: hidden; }
-  .readout .bar > i { display: block; height: 100%; border-radius: var(--radius-pill); transition: width 0.12s linear; }
-
-  /* ================= Chart ================= */
-  .chart {
-    background: var(--card);
-    border: 0.5px solid var(--card-border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-md);
-    margin-bottom: var(--space-md);
-  }
-  .chart .legend { display: flex; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-xs); }
-  .legend .item {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; color: var(--label-secondary); letter-spacing: 0;
-    cursor: pointer; user-select: none;
-    padding: 3px 8px; border-radius: var(--radius-pill);
-    transition: opacity 0.18s var(--ease-out), background 0.18s var(--ease-out);
-  }
-  .legend .item:hover { background: var(--bg-tertiary); }
-  .legend .item.off { opacity: 0.35; }
-  .legend .item .dot { width: 10px; height: 10px; border-radius: 50%; }
-  canvas#chart { display: block; width: 100%; }
-
-  /* ================= Lab (accordion cards) ================= */
-  .lab { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-  .card {
-    background: var(--card);
-    border: 0.5px solid var(--card-border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-  }
-  .card.wide { grid-column: 1 / -1; }
-  .card-head {
-    display: flex; align-items: center; gap: var(--space-sm);
-    padding: var(--space-md);
-    cursor: pointer; user-select: none;
-    transition: background 0.18s var(--ease-out);
-  }
-  .card-head:hover { background: var(--bg-tertiary); }
-  .card-head .icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; font-size: 17px; }
-  .card-head .title { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
-  .card-head .chev { margin-left: auto; color: var(--label-tertiary); transition: transform 0.25s var(--ease-out); }
-  .card.open .chev { transform: rotate(180deg); }
-  .card-body {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.32s var(--ease-in-out);
-  }
-  .card.open .card-body { grid-template-rows: 1fr; }
-  .card-body > div { overflow: hidden; }
-  .card-body .inner { padding: 0 var(--space-md) var(--space-md); }
-
-  /* causal flow */
-  .flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13.5px; letter-spacing: 0; margin-bottom: 10px; }
-  .flow .node { padding: 5px 11px; border-radius: 8px; font-weight: 600; }
-  .flow .arrow { color: var(--label-tertiary); }
-  .flow.real .node { background: rgba(10,132,255,0.14); color: var(--accent-on-dark); }
-  .flow.real .arrow { color: var(--accent); }
-  .flow.fake .node { background: rgba(255,55,95,0.10); color: var(--red); }
-  .flow.fake .arrow { color: var(--red); opacity: 0.55; }
-  .flow .why { color: var(--label-tertiary); font-size: 12.5px; }
-
-  .r-line { display: flex; align-items: center; gap: var(--space-sm); font-size: 13.5px; margin-bottom: var(--space-xs); letter-spacing: 0; }
-  .r-line .rval { font-family: var(--font-display); font-weight: 600; font-size: 18px; min-width: 56px; font-variant-numeric: tabular-nums; }
-  .r-bar { height: 8px; background: var(--bg-tertiary); border-radius: var(--radius-pill); overflow: hidden; flex: 1; }
-  .r-bar > i { display: block; height: 100%; border-radius: var(--radius-pill); transition: width 0.2s var(--ease-out); }
-
-  .oracle-box {
-    border: 0.5px dashed var(--separator);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    background: var(--bg-secondary);
-    font-size: 15px; line-height: 1.6;
-    color: var(--label);
-    min-height: 96px;
-    margin-bottom: var(--space-sm);
-  }
-  .oracle-box .planets { color: var(--indigo); font-weight: 600; }
-  .oracle-box .cursor { display: inline-block; width: 7px; height: 16px; background: var(--accent); margin-left: 2px; vertical-align: -2px; animation: blink 1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
-  .reveal {
-    font-size: 13px; color: var(--label-secondary); letter-spacing: 0;
-    opacity: 0; transform: translateY(6px);
-    transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
-  }
-  .reveal.on { opacity: 1; transform: translateY(0); }
-
-  .ladder { display: flex; flex-direction: column; gap: var(--space-xs); }
-  .tier {
-    display: flex; align-items: center; gap: var(--space-sm);
-    font-size: 14px; padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md); letter-spacing: 0;
-    cursor: pointer; transition: background 0.18s var(--ease-out);
-  }
-  .tier .name { font-weight: 600; min-width: 96px; }
-  .tier .desc { color: var(--label-secondary); max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s var(--ease-out), opacity 0.25s var(--ease-out), margin-top 0.3s var(--ease-out); }
-  .tier.open .desc { max-height: 60px; opacity: 1; margin-top: 2px; }
-  .tier .chev { margin-left: auto; color: var(--label-tertiary); font-size: 12px; transition: transform 0.25s var(--ease-out); }
-  .tier.open .chev { transform: rotate(180deg); }
-  .tier.t1 { background: rgba(10,132,255,0.10); }
-  .tier.t2 { background: rgba(255,159,10,0.10); }
-  .tier.t3 { background: rgba(255,55,95,0.10); }
-
-  .preds { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--space-sm); }
-  .preds span {
-    width: 27px; height: 27px; display: grid; place-items: center;
-    border-radius: 7px; font-size: 12px; font-weight: 600;
-    transition: opacity 0.25s var(--ease-out), transform 0.2s var(--spring);
-  }
-  .preds span.hit { background: rgba(48,209,88,0.18); color: var(--green); }
-  .preds span.miss { background: var(--bg-tertiary); color: var(--label-tertiary); }
-  .preds span.dim { opacity: 0.12; }
-
-  .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  button.pill {
-    border: 0.5px solid var(--separator);
-    background: transparent; color: var(--label);
-    font-size: 13.5px; font-weight: 500;
-    padding: 7px 15px; border-radius: var(--radius-pill);
-    cursor: pointer;
-    transition: background 0.15s var(--ease-out), transform 0.15s var(--spring);
-  }
-  button.pill:hover { background: var(--bg-tertiary); }
-  button.pill:active { transform: scale(0.95); }
-  button.pill.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  button.pill.primary:hover { background: var(--accent-focus); }
-
-  footer {
-    max-width: 1200px; margin: var(--space-xl) auto 0;
-    padding: var(--space-md);
-    border-top: 0.5px solid var(--separator);
-    color: var(--label-tertiary); font-size: 12.5px; letter-spacing: 0;
-  }
-  footer a { color: var(--accent); text-decoration: none; }
-
-  /* ================= Onboarding ================= */
-  .ob {
-    position: absolute; inset: 0; z-index: 40;
-    background: rgba(4,4,10,0.6);
-    backdrop-filter: blur(2px);
-    display: flex; align-items: center; justify-content: center;
-    transition: opacity 0.3s var(--ease-out);
-  }
-  .ob.hide { opacity: 0; pointer-events: none; }
-  .ob-card {
-    max-width: 360px; text-align: center; padding: var(--space-lg);
-    background: rgba(28,28,30,0.9);
-    border: 0.5px solid rgba(255,255,255,0.12);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
-    color: #fff;
-  }
-  .ob-card .ob-step { font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 1px; text-transform: uppercase; margin-bottom: var(--space-sm); }
-  .ob-card .ob-text { font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.4px; line-height: 1.3; margin-bottom: var(--space-lg); }
-  .ob-card .ob-actions { display: flex; gap: var(--space-sm); justify-content: center; }
-  .ob-card button {
-    border: none; border-radius: var(--radius-pill);
-    padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: transform 0.15s var(--spring), background 0.15s var(--ease-out);
-  }
-  .ob-card button:active { transform: scale(0.95); }
-  .ob-card .ob-next { background: var(--accent); color: #fff; }
-  .ob-card .ob-skip { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
-
-  [hidden] { display: none !important; }
+  #help.open .sheet { transform: scale(1) translateY(0); }
+  #help h2 { font-family: var(--font-display); font-size: 20px; letter-spacing: -0.02em; margin-bottom: var(--space-md); }
+  #help p { font-size: 14px; line-height: 1.6; color: var(--label-secondary); margin-bottom: 10px; }
+  #help .close { margin-top: var(--space-md); padding: 8px 20px; border-radius: var(--radius-pill); border: none; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
-
-  @media (max-width: 860px) {
-    .readouts { grid-template-columns: repeat(2, 1fr); }
-    .lab { grid-template-columns: 1fr; }
-    .brand .name { font-size: 15px; }
+    * { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
+<canvas id="stage"></canvas>
 
-<nav>
-  <div class="nav-inner">
-    <div class="brand">
-      <span class="glyph">☰</span>
-      <span class="name">As Above, So Below</span>
-    </div>
-    <div class="nav-actions">
-      <button class="icon-btn" id="skepticBtn" title="Skeptic mode" aria-label="Toggle skeptic mode">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      </button>
-      <button class="icon-btn" id="helpBtn" title="Guide" aria-label="Show guide">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </button>
-    </div>
+<header id="topbar">
+  <div id="brand">As Above, So Below</div>
+  <div id="breadcrumb"></div>
+  <div class="spacer"></div>
+  <button class="icon-btn" id="btn-theme" title="Toggle theme" aria-label="Toggle theme">
+    <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+  <button class="icon-btn" id="btn-help" title="How to explore" aria-label="How to explore">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>
+  </button>
+</header>
+
+<div id="legend"></div>
+<div id="hint"></div>
+<div id="tooltip"></div>
+
+<div id="help">
+  <div class="sheet">
+    <h2>Explore the nested systems</h2>
+    <p>Every <b>node</b> is an entity — a star, a plant, a hormone. Every <b>edge</b> is a real interaction between them.</p>
+    <p><b>Scroll</b> to zoom · <b>drag</b> to pan · <b>hover</b> a node or edge for the mechanism.</p>
+    <p>Nodes with a <b>ring</b> contain a whole system inside. <b>Click</b> them to dive down a level. Use the <b>breadcrumb</b> to climb back up.</p>
+    <p>Edge style encodes <b>evidence strength</b> — solid is established, dotted is speculative. The disputed links are the point: this is where correlation ≠ causation.</p>
+    <button class="close" id="btn-close-help">Got it</button>
   </div>
-</nav>
-
-<main>
-  <section class="stage-wrap" id="stageWrap">
-    <canvas id="stage" width="1280" height="620"></canvas>
-
-    <div class="stage-hint" id="hint">hover · click · explore</div>
-
-    <div class="dock" id="dock">
-      <button class="icon-btn" id="pause" aria-label="Pause">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
-      </button>
-      <button class="icon-btn" id="shuffle" aria-label="Shuffle planet phases">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
-      </button>
-      <button class="icon-btn" id="reset" aria-label="Reset">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-      </button>
-      <div class="sep"></div>
-      <button class="icon-btn" id="settings" aria-label="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-      </button>
-      <div class="dock-panel" id="dockPanel">
-        <div class="ctl">
-          <label>Speed <span class="val" id="vSpeed">1.0×</span></label>
-          <input type="range" id="speed" min="0.25" max="4" step="0.25" value="1">
-        </div>
-        <div class="ctl">
-          <label>Coupling <span class="val" id="vCoupling">0.70</span></label>
-          <input type="range" id="coupling" min="0" max="1" step="0.01" value="0.7">
-        </div>
-        <div class="ctl">
-          <label>Noise <span class="val" id="vNoise">0.00</span></label>
-          <input type="range" id="noise" min="0" max="1" step="0.01" value="0">
-        </div>
-      </div>
-    </div>
-
-    <div class="ob" id="ob">
-      <div class="ob-card">
-        <div class="ob-step" id="obStep">1 / 3</div>
-        <div class="ob-text" id="obText"></div>
-        <div class="ob-actions">
-          <button class="ob-skip" id="obSkip">Skip</button>
-          <button class="ob-next" id="obNext">Next</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="readouts" id="readouts">
-    <div class="readout" data-node="3"><div class="dot" style="background:var(--pink)"></div><div class="v" id="rMood">—</div><div class="bar"><i id="bMood" style="background:var(--pink); width:0%"></i></div></div>
-    <div class="readout" data-node="4"><div class="dot" style="background:var(--green)"></div><div class="v" id="rEnergy">—</div><div class="bar"><i id="bEnergy" style="background:var(--green); width:0%"></i></div></div>
-    <div class="readout" data-node="1"><div class="dot" style="background:var(--indigo)"></div><div class="v" id="rMel">—</div><div class="bar"><i id="bMel" style="background:var(--indigo); width:0%"></i></div></div>
-    <div class="readout" data-node="0"><div class="dot" style="background:var(--blue)"></div><div class="v" id="rSync">—</div><div class="bar"><i id="bSync" style="background:var(--blue); width:0%"></i></div></div>
-    <div class="readout" data-node="-1"><div class="dot" style="background:var(--accent)"></div><div class="v" id="rCorr">—</div><div class="bar"><i id="bCorr" style="background:var(--accent); width:0%"></i></div></div>
-  </div>
-
-  <div class="chart">
-    <div class="legend" id="legend">
-      <span class="item" data-line="cosmic"><span class="dot" style="background:var(--accent)"></span>Cosmic</span>
-      <span class="item" data-line="mood"><span class="dot" style="background:var(--pink)"></span>Mood</span>
-      <span class="item" data-line="astro"><span class="dot" style="background:var(--orange)"></span>Astrology</span>
-    </div>
-    <canvas id="chart" width="1180" height="190"></canvas>
-  </div>
-
-  <div class="lab">
-    <div class="card wide" data-card>
-      <div class="card-head">
-        <span class="icon" style="background:rgba(10,132,255,0.15)">🔗</span>
-        <span class="title">Two paths, one real</span>
-        <span class="chev">▾</span>
-      </div>
-      <div class="card-body"><div><div class="inner">
-        <div class="flow real">
-          <span class="node">Sunlight</span><span class="arrow">→</span><span class="node">SCN</span><span class="arrow">→</span><span class="node">Melatonin</span><span class="arrow">→</span><span class="node">Mood</span>
-          <span class="why">— the real causal edge</span>
-        </div>
-        <div class="flow fake">
-          <span class="node">Planets</span><span class="arrow">⇢</span><span class="node">Mood</span>
-          <span class="why">— no edge here; only a spurious correlation</span>
-        </div>
-        <div class="r-line">
-          <span class="rval" id="rAstro" style="color:var(--orange)">—</span>
-          <span>Astrology ↔ Mood</span>
-          <div class="r-bar"><i id="bAstro" style="background:var(--orange); width:0%"></i></div>
-        </div>
-        <div class="r-line">
-          <span class="rval" id="rSun" style="color:var(--accent)">—</span>
-          <span>Cosmic ↔ Mood</span>
-          <div class="r-bar"><i id="bSun" style="background:var(--accent); width:0%"></i></div>
-        </div>
-      </div></div></div>
-    </div>
-
-    <div class="card" data-card>
-      <div class="card-head">
-        <span class="icon" style="background:rgba(255,55,95,0.14)">🔮</span>
-        <span class="title">It always fits</span>
-        <span class="chev">▾</span>
-      </div>
-      <div class="card-body"><div><div class="inner">
-        <div class="oracle-box" id="oracle"></div>
-        <div class="pill-row">
-          <button class="pill primary" id="reading">New reading</button>
-        </div>
-        <p class="reveal" id="oracleReveal">Vague enough to explain any outcome — that is overfitting, not prediction.</p>
-      </div></div></div>
-    </div>
-
-    <div class="card" data-card>
-      <div class="card-head">
-        <span class="icon" style="background:rgba(255,159,10,0.14)">📊</span>
-        <span class="title">Evidence, in layers</span>
-        <span class="chev">▾</span>
-      </div>
-      <div class="card-body"><div><div class="inner">
-        <div class="ladder">
-          <div class="tier t1"><span class="name">Established</span><span class="desc">Tides · melatonin · circadian rhythm</span><span class="chev">▾</span></div>
-          <div class="tier t2"><span class="name">Frontier</span><span class="desc">Geomagnetic ↔ cardiac · lunar ↔ sleep</span><span class="chev">▾</span></div>
-          <div class="tier t3"><span class="name">Speculative</span><span class="desc">Planets → personality, mood, career</span><span class="chev">▾</span></div>
-        </div>
-      </div></div></div>
-    </div>
-
-    <div class="card" data-card>
-      <div class="card-head">
-        <span class="icon" style="background:rgba(48,209,88,0.14)">🎯</span>
-        <span class="title">Hits &amp; misses</span>
-        <span class="chev">▾</span>
-      </div>
-      <div class="card-body"><div><div class="inner">
-        <div class="preds" id="preds"></div>
-        <div class="pill-row">
-          <button class="pill" id="filterHits">Show only hits</button>
-          <button class="pill" id="filterAll">Show all</button>
-        </div>
-      </div></div></div>
-    </div>
-  </div>
-</main>
-
-<footer>
-  A thought experiment — not a validation of astrology.
-  <a href="https://dev.to/sanyaduan/zhan-xing-zhu-ba-gua-yu-fu-za-xi-tong-xun-zhao-mi-xin-yu-ke-xue-zhi-jian-de-qiao-liang-35hm" target="_blank" rel="noopener">Source essay</a>.
-</footer>
-
-<div id="tooltip" aria-hidden="true"></div>
+</div>
 
 <script>
+(() => {
 "use strict";
 
-/* ================= Theme ================= */
-const root = document.documentElement;
-const themeBtn = document.getElementById("themeBtn");
-function applyTheme(t) {
-  root.setAttribute("data-theme", t);
-  localStorage.setItem("aasb-theme", t);
-}
-applyTheme(localStorage.getItem("aasb-theme") || "dark");
-themeBtn.addEventListener("click", () => {
-  applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
-});
-
-/* ================= Model ================= */
-const T_DAY = 5;
-
-const BODIES = [
-  { name:"Sun",     isSun:true,  orbit:0,   period:0,    size:30, color:"#FFD60A", weight:1.0,  moon:false, sub:"light → circadian rhythm", est:true  },
-  { name:"Mercury", isSun:false, orbit:52,  period:2.4,  size:3.4, color:"#98989D", weight:0.05, moon:false, sub:"a weak periodic signal", est:false },
-  { name:"Venus",   isSun:false, orbit:78,  period:4.8,  size:5.0, color:"#E8C39E", weight:0.09, moon:false, sub:"a weak periodic signal", est:false },
-  { name:"Earth",   isSun:false, orbit:106, period:7.2,  size:5.2, color:"#4A90D9", weight:0.12, moon:true,  sub:"a weak periodic signal", est:false },
-  { name:"Mars",    isSun:false, orbit:134, period:11.5, size:4.0, color:"#E07B54", weight:0.07, moon:false, sub:"a weak periodic signal", est:false },
-  { name:"Jupiter", isSun:false, orbit:172, period:28,   size:11,  color:"#D8B98A", weight:0.14, moon:false, sub:"a weak periodic signal", est:false },
-  { name:"Saturn",  isSun:false, orbit:214, period:50,   size:9.5, color:"#E5D3A8", weight:0.10, moon:false, sub:"a weak periodic signal", est:false },
-];
-
-const NODE_DEFS = [
-  { key:"scn",  name:"SCN",          long:"circadian clock", color:"#0A84FF" },
-  { key:"mel",  name:"Melatonin",    long:"sleep hormone",   color:"#5E5CE6" },
-  { key:"cor",  name:"Cortisol",     long:"stress & alert",  color:"#FF9F0A" },
-  { key:"mood", name:"Mood",         long:"emergent state",  color:"#FF375F" },
-  { key:"eng",  name:"Energy",       long:"alertness",       color:"#30D158" },
-  { key:"imm",  name:"Immune",       long:"slow defense",    color:"#BF5AF2" },
-];
-const IDX = { scn:0, mel:1, cor:2, mood:3, eng:4, imm:5 };
-
-const BIAS = { 0:-0.4, 1:1.4, 2:-0.3, 3:0.4, 4:0.3, 5:0.6 };
-const TAU  = { 0:0.30, 1:0.85, 2:0.80, 3:0.60, 4:0.50, 5:2.0 };
-const W = (() => {
-  const m = Array.from({length:6}, () => new Array(6).fill(0));
-  m[IDX.mel][IDX.scn]  = -1.7;
-  m[IDX.cor][IDX.scn]  =  1.3;
-  m[IDX.mood][IDX.scn] =  0.55;
-  m[IDX.mood][IDX.mel] = -0.45;
-  m[IDX.mood][IDX.cor] = -0.20;
-  m[IDX.mood][IDX.eng] =  0.20;
-  m[IDX.eng][IDX.cor]  =  0.80;
-  m[IDX.eng][IDX.mel]  = -0.70;
-  m[IDX.eng][IDX.mood] =  0.30;
-  m[IDX.imm][IDX.cor]  = -0.50;
-  return m;
-})();
-
-const EDGES = [
-  [IDX.scn, IDX.mel], [IDX.scn, IDX.cor], [IDX.scn, IDX.mood],
-  [IDX.mel, IDX.mood], [IDX.mel, IDX.eng], [IDX.cor, IDX.mood],
-  [IDX.cor, IDX.eng], [IDX.cor, IDX.imm], [IDX.eng, IDX.mood],
-];
-
-const NODE_POS = {
-  0:[950,190], 1:[800,258], 2:[1100,258], 3:[812,402], 4:[1088,402], 5:[950,486],
+/* ================= Data ================= */
+const EVIDENCE = {
+  established: { label: "established", weight: 3, color: "#30D158", style: "solid" },
+  emerging:    { label: "emerging",    weight: 2, color: "#FF9F0A", style: "dashed" },
+  speculative: { label: "speculative", weight: 1, color: "#FFD60A", style: "dotted" },
+  disputed:    { label: "disputed",    weight: 1, color: "#FF453A", style: "dotted" },
 };
-const SUN_POS = { x:330, y:310 };
 
+const GRAPH = [
+  {
+    id: "solar",
+    name: "Solar System",
+    parent: null,
+    nodes: [
+      { id: "sun",     label: "Sun",     color: "#FFD60A", size: 30, desc: "The star whose light and gravity drive everything below.", children: null },
+      { id: "moon",    label: "Moon",    color: "#AEAEB2", size: 20, desc: "Earth's satellite; its tidal force shapes oceans and, weakly, biology.", children: null },
+      { id: "earth",   label: "Earth",   color: "#64D2FF", size: 24, desc: "A living planet — a nested system of biosphere and climate.", children: "earth" },
+      { id: "jupiter", label: "Jupiter", color: "#FF9F0A", size: 22, desc: "Its gravity perturbs Earth's orbit over millennia.", children: null },
+      { id: "saturn",  label: "Saturn",  color: "#FFD60A", size: 20, desc: "Together with Jupiter, it nudges Earth's orbit (Milankovitch cycles).", children: null },
+    ],
+    edges: [
+      { from: "sun", to: "earth", evidence: "established", label: "light & gravity", desc: "Solar radiation heats Earth and drives climate and photosynthesis; gravity holds the orbit." },
+      { from: "moon", to: "earth", evidence: "established", label: "tides", desc: "Lunar tidal force raises two ocean bulges each day; tidal friction slows Earth's spin by ~17µs/yr." },
+      { from: "sun", to: "moon", evidence: "established", label: "reflected light", desc: "Moonlight is reflected sunlight — the primary signal that reaches night-time biology." },
+      { from: "jupiter", to: "earth", evidence: "established", label: "orbital perturbation", desc: "Outer-planet gravity precesses Earth's orbit (apsidal precession, ~112 kyr)." },
+      { from: "saturn", to: "earth", evidence: "established", label: "orbital perturbation", desc: "With Jupiter, it modulates Earth's orbital shape — a driver of ice-age timing." },
+    ],
+  },
+  {
+    id: "earth",
+    name: "Earth Biosphere",
+    parent: "earth",
+    nodes: [
+      { id: "atmosphere",   label: "Atmosphere",   color: "#8E8E93", size: 20, desc: "The gas envelope: O₂ from life, CO₂ that traps heat.", children: null },
+      { id: "ocean",        label: "Ocean",        color: "#0A84FF", size: 24, desc: "The planet's largest heat and carbon reservoir (93% of active carbon).", children: null },
+      { id: "plants",       label: "Plants",       color: "#30D158", size: 22, desc: "Land vegetation: photosynthesis fixes CO₂ and releases O₂.", children: null },
+      { id: "phytoplankton",label: "Phytoplankton",color: "#5E5CE6", size: 20, desc: "Ocean algae that run the biological carbon pump.", children: null },
+      { id: "climate",      label: "Climate",      color: "#64D2FF", size: 22, desc: "The emergent weather regime, set by ocean, atmosphere and orbit.", children: null },
+      { id: "human",        label: "Human",        color: "#FF375F", size: 24, desc: "An animal inside the biosphere — and itself a nested system.", children: "human" },
+    ],
+    edges: [
+      { from: "plants", to: "atmosphere", evidence: "established", label: "O₂ / CO₂ exchange", desc: "Photosynthesis draws down CO₂ and releases O₂." },
+      { from: "phytoplankton", to: "ocean", evidence: "established", label: "biological pump", desc: "Algae fix carbon; dead cells sink, sequestering carbon in the deep ocean." },
+      { from: "ocean", to: "climate", evidence: "established", label: "heat capacity & currents", desc: "The ocean stores 90%+ of excess heat and moves it poleward." },
+      { from: "atmosphere", to: "climate", evidence: "established", label: "greenhouse effect", desc: "CO₂ and other gases trap outgoing longwave radiation." },
+      { from: "ocean", to: "atmosphere", evidence: "established", label: "evaporation & CO₂ flux", desc: "The ocean exchanges water vapor and absorbs ~25% of human CO₂ emissions." },
+    ],
+    cross: [
+      { from: "sun",  fromLayer: "solar", to: "plants", evidence: "established", label: "photosynthesis", desc: "Sunlight is the energy input for carbon fixation." },
+      { from: "sun",  fromLayer: "solar", to: "ocean",  evidence: "established", label: "heating & evaporation", desc: "Solar energy drives the water cycle and ocean warming." },
+      { from: "moon", fromLayer: "solar", to: "ocean",  evidence: "established", label: "tides", desc: "The same lunar tide that churns coastlines also mixes shallow seas." },
+    ],
+  },
+  {
+    id: "human",
+    name: "Human Internal",
+    parent: "human",
+    nodes: [
+      { id: "scn",       label: "SCN",            color: "#5E5CE6", size: 22, desc: "Suprachiasmatic nucleus — the master circadian clock in the brain.", children: null },
+      { id: "melatonin", label: "Melatonin",      color: "#BF5AF2", size: 20, desc: "The sleep hormone, secreted by the pineal gland under SCN control.", children: null },
+      { id: "serotonin", label: "Serotonin",      color: "#FF9F0A", size: 20, desc: "A mood-regulating neurotransmitter; 90–95% is actually made in the gut.", children: null },
+      { id: "dopamine",  label: "Dopamine",       color: "#FF375F", size: 20, desc: "Reward and motivation neurotransmitter. Sunlight's direct effect here is weak.", children: null },
+      { id: "cortisol",  label: "Cortisol",       color: "#FF453A", size: 20, desc: "The stress hormone; chronically elevated cortisol suppresses immunity.", children: null },
+      { id: "vitd",      label: "Vitamin D",      color: "#FFD60A", size: 20, desc: "Synthesized in skin from UVB; regulates T and B cells.", children: null },
+      { id: "immune",    label: "Immune System",  color: "#30D158", size: 22, desc: "The body's defense network, modulated by hormones and nutrients.", children: null },
+      { id: "gut",       label: "Gut Microbiome", color: "#64D2FF", size: 20, desc: "Trillions of microbes that shape gut serotonin and, indirectly, mood.", children: null },
+    ],
+    edges: [
+      { from: "scn", to: "melatonin", evidence: "established", label: "circadian clock", desc: "The SCN drives melatonin release, setting the sleep–wake cycle." },
+      { from: "cortisol", to: "immune", evidence: "established", label: "stress suppresses immunity", desc: "Elevated cortisol inhibits immune-cell activity and promotes inflammation." },
+      { from: "vitd", to: "immune", evidence: "established", label: "immunomodulation", desc: "Calcitriol boosts antimicrobial peptides and induces regulatory T cells." },
+      { from: "gut", to: "serotonin", evidence: "emerging", label: "90% made in the gut", desc: "Enterochromaffin cells synthesize most serotonin; microbes tune this via SCFAs." },
+      { from: "melatonin", to: "immune", evidence: "emerging", label: "sleep & immune repair", desc: "Sleep supports immune function; the exact melatonin pathway is still being mapped." },
+    ],
+    cross: [
+      { from: "sun",  fromLayer: "solar", to: "scn",       evidence: "established", label: "entrains circadian clock", desc: "Retinal light (ipRGC → SCN) synchronizes the body to day/night." },
+      { from: "sun",  fromLayer: "solar", to: "vitd",      evidence: "established", label: "UVB → vitamin D", desc: "UVB (290–320nm) converts skin 7-dehydrocholesterol into vitamin D₃." },
+      { from: "sun",  fromLayer: "solar", to: "serotonin", evidence: "emerging",    label: "light therapy for SAD", desc: "Winter light loss lowers serotonin; 10,000-lux light therapy relieves seasonal depression." },
+      { from: "sun",  fromLayer: "solar", to: "dopamine",  evidence: "speculative", label: "indirect, weak evidence", desc: "Light's antidepressant effect runs through serotonin/melatonin — a direct dopamine link is not established." },
+      { from: "moon", fromLayer: "solar", to: "melatonin", evidence: "disputed",    label: "full moon → less melatonin", desc: "Some lab studies report reduced melatonin near full moon; large meta-analyses find no robust effect." },
+    ],
+  },
+];
+
+/* ================= State ================= */
 const state = {
-  t: 0, speed: 1, coupling: 0.7, noise: 0,
-  running: true, skeptic: false,
-  a: new Array(6).fill(0.5),
-  angles: BODIES.map((b,i) => (i * 1.7) % (Math.PI*2)),
-  moonAngle: 0, lastSample: 0,
-  focusNode: -1,
-  hover: { type: null, index: -1 },
+  layerId: "solar",
+  scale: 1, ox: 0, oy: 0,
+  hover: null,          // {type:'node'|'edge'|'cross', index}
+  focusNode: null,
+  transition: null,     // {from:{...}, to:{...}, t0, dur, onDone}
+  filters: { established: true, emerging: true, speculative: true, disputed: true },
+  t: 0,
 };
 
-/* ================= Signals & dynamics ================= */
-function light(t) { return 0.5 + 0.5 * Math.sin((2*Math.PI*t)/T_DAY); }
-function planetSignal() {
-  let s = 0;
-  for (let i = 1; i < BODIES.length; i++) s += BODIES[i].weight * Math.sin(state.angles[i]);
-  s += 0.18 * Math.sin(state.moonAngle);
-  return s;
-}
-function cosmicSignal(t) { return 0.78 * light(t) + 0.22 * (planetSignal() / 1.4 * 2) * 0.5; }
-function sigmoid(x) { return 1 / (1 + Math.exp(-4 * x)); }
+/* ================= Canvas & camera ================= */
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1;
 
-function step(dt) {
-  const a = state.a, L = light(state.t);
-  const ext = new Array(6).fill(0);
-  ext[IDX.scn] = state.coupling * L;
-  ext[IDX.mood] = 0.12 * state.coupling * L;
-  const next = new Array(6);
-  for (let j = 0; j < 6; j++) {
-    let net = BIAS[j] + ext[j];
-    for (let i = 0; i < 6; i++) net += W[j][i] * a[i];
-    if (state.noise > 0) net += (Math.random()*2 - 1) * state.noise * 1.4;
-    next[j] = a[j] + (sigmoid(net) - a[j]) * (dt / TAU[j]);
-  }
-  state.a = next;
-  for (let i = 0; i < BODIES.length; i++) if (BODIES[i].period > 0) state.angles[i] += (2*Math.PI*dt) / BODIES[i].period;
-  state.moonAngle += (2*Math.PI*dt) / 1.7;
-  state.t += dt;
-}
-
-/* ================= History ================= */
-const HIST = { cosmic:[], astro:[], mood:[], light:[], scn:[] };
-const MAX_HIST = 360;
-function record() {
-  const push = (arr, v) => { arr.push(v); if (arr.length > MAX_HIST) arr.shift(); };
-  push(HIST.cosmic, cosmicSignal(state.t));
-  push(HIST.astro, planetSignal());
-  push(HIST.mood, state.a[IDX.mood]);
-  push(HIST.light, light(state.t));
-  push(HIST.scn, state.a[IDX.scn]);
-}
-function pearson(x, y) {
-  const n = Math.min(x.length, y.length);
-  if (n < 8) return 0;
-  const x0 = x.slice(-n), y0 = y.slice(-n);
-  let sx=0, sy=0, sxx=0, syy=0, sxy=0;
-  for (let i=0;i<n;i++){ sx+=x0[i]; sy+=y0[i]; sxx+=x0[i]*x0[i]; syy+=y0[i]*y0[i]; sxy+=x0[i]*y0[i]; }
-  const mx=sx/n, my=sy/n;
-  const cov = sxy/n - mx*my, vx = sxx/n - mx*mx, vy = syy/n - my*my;
-  const den = Math.sqrt(vx*vy);
-  return den === 0 ? 0 : cov/den;
-}
-
-/* ================= Canvas ================= */
-const stage = document.getElementById("stage");
-const sctx = stage.getContext("2d");
-const chart = document.getElementById("chart");
-const cctx = chart.getContext("2d");
-
-let scale = 1, dpr = 1;
 function resize() {
-  dpr = window.devicePixelRatio || 1;
-  const Wpx = stage.clientWidth || stage.parentElement.clientWidth;
-  const Hpx = Math.round(Wpx * 620/1280);
-  stage.style.height = Hpx + "px";
-  stage.width = Wpx * dpr;
-  stage.height = Hpx * dpr;
-  scale = Wpx / 1280;
-  chart.width = (chart.clientWidth || chart.parentElement.clientWidth) * dpr;
-  chart.height = 190 * dpr;
-}
-window.addEventListener("resize", resize);
-resize();
-
-const stars = Array.from({length:160}, () => ({ x: Math.random(), y: Math.random()*0.98, r: Math.random()*1.2+0.3, tw: Math.random()*6.28 }));
-
-function drawStars() {
-  for (const s of stars) {
-    const a = 0.25 + 0.55*Math.abs(Math.sin(s.tw + state.t*0.3));
-    sctx.fillStyle = `rgba(255,255,255,${a})`;
-    sctx.beginPath(); sctx.arc(s.x*1280, s.y*620, s.r, 0, 6.283); sctx.fill();
-  }
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 
-function bodyXY(i) {
-  const b = BODIES[i];
-  return { x: SUN_POS.x + b.orbit*Math.cos(state.angles[i]), y: SUN_POS.y + b.orbit*Math.sin(state.angles[i]) };
+/* ================= Layout (force-directed) ================= */
+const LAYOUT_R = 330;
+function initLayout(layer) {
+  const n = layer.nodes.length;
+  layer.nodes.forEach((node, i) => {
+    const ang = (i / n) * Math.PI * 2 - Math.PI / 2;
+    node.x = Math.cos(ang) * LAYOUT_R;
+    node.y = Math.sin(ang) * LAYOUT_R;
+    node.vx = 0; node.vy = 0;
+  });
+  for (let k = 0; k < 700; k++) layoutTick(layer);
 }
-
-function isFocused(type, i) {
-  if (state.focusNode < 0) return true;                 // nothing focused → show all
-  if (type === "node") return state.focusNode === i;    // node focus
-  if (type === "body") return i === 0;                  // sun always relevant to node focus
-  if (type === "bridge") return true;
-  return false;
-}
-
-function drawCelestial() {
-  const cx = SUN_POS.x, cy = SUN_POS.y;
-  sctx.strokeStyle = "rgba(255,255,255,0.05)";
-  sctx.lineWidth = 1;
-  for (let i = 1; i < BODIES.length; i++) { sctx.beginPath(); sctx.arc(cx, cy, BODIES[i].orbit, 0, 6.283); sctx.stroke(); }
-
-  const glow = sctx.createRadialGradient(cx,cy,0,cx,cy,90);
-  glow.addColorStop(0,"rgba(255,214,10,0.55)");
-  glow.addColorStop(1,"rgba(255,214,10,0)");
-  sctx.fillStyle = glow; sctx.beginPath(); sctx.arc(cx,cy,90,0,6.283); sctx.fill();
-
-  for (let i = 1; i < BODIES.length; i++) {
-    const b = BODIES[i], p = bodyXY(i);
-    const dim = state.skeptic ? 0.25 : 1;
-    const focusDim = isFocused("body", i) ? 1 : 0.35;
-    const hovered = state.hover.type === "body" && state.hover.index === i;
-    sctx.globalAlpha = dim * (state.focusNode < 0 ? 1 : focusDim);
-    sctx.fillStyle = b.color;
-    sctx.beginPath(); sctx.arc(p.x, p.y, b.size, 0, 6.283); sctx.fill();
-    if (b.moon) {
-      const mx = p.x + 13*Math.cos(state.moonAngle), my = p.y + 13*Math.sin(state.moonAngle);
-      sctx.fillStyle = "#C7C7CC"; sctx.beginPath(); sctx.arc(mx, my, 2.2, 0, 6.283); sctx.fill();
-    }
-    if (hovered) {
-      sctx.strokeStyle = b.color; sctx.lineWidth = 2;
-      sctx.beginPath(); sctx.arc(p.x, p.y, b.size + 5, 0, 6.283); sctx.stroke();
-    }
-    sctx.globalAlpha = 1;
-    if (!state.skeptic && state.focusNode < 0) {
-      sctx.fillStyle = "rgba(255,255,255,0.4)";
-      sctx.font = "10px " + getComputedStyle(document.body).fontFamily;
-      sctx.textAlign = "center";
-      sctx.fillText(b.name, p.x, p.y - b.size - 6);
+function layoutTick(layer) {
+  const nodes = layer.nodes, N = nodes.length;
+  const REPULSION = 90000, SPRING_LEN = 210, SPRING_K = 0.06, DAMP = 0.82;
+  for (let i = 0; i < N; i++) {
+    for (let j = i + 1; j < N; j++) {
+      const a = nodes[i], b = nodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y;
+      let d2 = dx * dx + dy * dy; if (d2 < 100) d2 = 100;
+      const d = Math.sqrt(d2), f = REPULSION / d2;
+      a.vx += (dx / d) * f; a.vy += (dy / d) * f;
+      b.vx -= (dx / d) * f; b.vy -= (dy / d) * f;
     }
   }
-  sctx.fillStyle = "#FFD60A";
-  sctx.beginPath(); sctx.arc(cx, cy, BODIES[0].size, 0, 6.283); sctx.fill();
-}
-
-function drawHuman() {
-  const a = state.a;
-  for (const [i,j] of EDGES) {
-    const p1 = NODE_POS[i], p2 = NODE_POS[j];
-    const w = W[j][i];
-    const highlight = state.focusNode === i || state.focusNode === j;
-    sctx.strokeStyle = w < 0 ? "rgba(255,99,90,0.35)" : "rgba(10,132,255,0.35)";
-    if (highlight) sctx.strokeStyle = w < 0 ? "rgba(255,99,90,0.8)" : "rgba(10,132,255,0.85)";
-    sctx.lineWidth = highlight ? 2.6 : Math.min(2.2, 0.6 + Math.abs(w)*0.9);
-    sctx.beginPath(); sctx.moveTo(p1[0],p1[1]); sctx.lineTo(p2[0],p2[1]); sctx.stroke();
+  const allEdges = layer.edges.concat(layer.cross || []);
+  for (const e of allEdges) {
+    const a = findNode(layer, e), b = layer.nodes.find(n => n.id === e.to);
+    if (!a || !b) continue;
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const f = (d - SPRING_LEN) * SPRING_K;
+    a.vx += (dx / d) * f; a.vy += (dy / d) * f;
+    b.vx -= (dx / d) * f; b.vy -= (dy / d) * f;
   }
-  for (let i = 0; i < 6; i++) {
-    const p = NODE_POS[i], v = a[i], d = NODE_DEFS[i];
-    const hovered = state.hover.type === "node" && state.hover.index === i;
-    const focused = state.focusNode === i;
-    const dim = state.focusNode < 0 ? 1 : (focused ? 1 : 0.35);
-    const r = (12 + v*8) * (focused ? 1.25 : 1);
-    sctx.globalAlpha = dim;
-    const g = sctx.createRadialGradient(p[0],p[1],0,p[0],p[1],r*2.2);
-    g.addColorStop(0, d.color + "88"); g.addColorStop(1, d.color + "00");
-    sctx.fillStyle = g; sctx.beginPath(); sctx.arc(p[0],p[1],r*2.2,0,6.283); sctx.fill();
-    sctx.fillStyle = d.color; sctx.beginPath(); sctx.arc(p[0],p[1],r,0,6.283); sctx.fill();
-    sctx.strokeStyle = hovered ? "#fff" : "rgba(255,255,255,0.25)";
-    sctx.lineWidth = hovered ? 2 : 1;
-    sctx.stroke();
-    sctx.globalAlpha = 1;
-    if (state.focusNode < 0 || focused) {
-      sctx.fillStyle = "rgba(255,255,255,0.85)";
-      sctx.font = "12px " + getComputedStyle(document.body).fontFamily;
-      sctx.textAlign = "center";
-      sctx.fillText(d.name, p[0], p[1] - r - 8);
+  for (const n of nodes) {
+    n.vx += (0 - n.x) * 0.0035;
+    n.vy += (0 - n.y) * 0.0035;
+    n.vx *= DAMP; n.vy *= DAMP;
+    n.x += n.vx; n.y += n.vy;
+  }
+}
+function findNode(layer, edge) {
+  if (edge.fromLayer) return getLayer(edge.fromLayer).nodes.find(n => n.id === edge.from);
+  return layer.nodes.find(n => n.id === edge.from);
+}
+function getLayer(id) { return GRAPH.find(l => l.id === id); }
+function currentLayer() { return getLayer(state.layerId); }
+
+/* ================= Ghost nodes (cross-layer sources) ================= */
+function ghostNodes(layer) {
+  const map = new Map();
+  for (const e of (layer.cross || [])) {
+    if (!map.has(e.fromLayer + ":" + e.from)) {
+      const srcLayer = getLayer(e.fromLayer);
+      const src = srcLayer.nodes.find(n => n.id === e.from);
+      map.set(e.fromLayer + ":" + e.from, { id: e.from, label: src.label, color: src.color, layer: e.fromLayer });
     }
   }
+  return Array.from(map.values());
 }
 
-function drawBridge() {
-  const t = performance.now()/1000, y0 = 310;
-  sctx.strokeStyle = "rgba(255,255,255,0.08)"; sctx.lineWidth = 2;
-  sctx.beginPath(); sctx.moveTo(560, y0); sctx.lineTo(790, y0); sctx.stroke();
-  const strength = state.coupling, n = 5;
-  for (let k = 0; k < n; k++) {
-    const ph = (t*0.5 + k/n) % 1, x = 560 + ph*230;
-    const alpha = (1-ph) * (0.35 + 0.5*strength);
-    sctx.fillStyle = `rgba(10,132,255,${alpha})`;
-    sctx.beginPath(); sctx.arc(x, y0, 3, 0, 6.283); sctx.fill();
+/* ================= Rendering ================= */
+function worldToScreen(wx, wy) {
+  return { x: wx * state.scale + state.ox + W / 2, y: wy * state.scale + state.oy + H / 2 };
+}
+function screenToWorld(sx, sy) {
+  return { x: (sx - state.ox - W / 2) / state.scale, y: (sy - state.oy - H / 2) / state.scale };
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const layer = currentLayer();
+  const nodes = layer.nodes;
+  const ghosts = ghostNodes(layer);
+  const t = state.t;
+
+  // ghost positions (top band)
+  const ghostPos = {};
+  ghosts.forEach((g, i) => {
+    const gx = (i - (ghosts.length - 1) / 2) * 300;
+    const gy = -430;
+    ghostPos[g.layer + ":" + g.id] = { x: gx, y: gy };
+  });
+
+  // ---- edges (intra-layer) ----
+  for (let i = 0; i < layer.edges.length; i++) {
+    const e = layer.edges[i];
+    if (!state.filters[e.evidence]) continue;
+    const a = nodes.find(n => n.id === e.from);
+    const b = nodes.find(n => n.id === e.to);
+    drawEdge(a, b, e, i, false);
   }
+
+  // ---- cross edges ----
+  const crossList = (layer.cross || []).filter(e => state.filters[e.evidence]);
+  crossList.forEach((e, i) => {
+    const g = ghostPos[e.fromLayer + ":" + e.from];
+    const b = nodes.find(n => n.id === e.to);
+    if (!g || !b) return;
+    drawEdge({ x: g.x, y: g.y, ghost: true }, b, e, layer.edges.length + i, true);
+  });
+
+  // ---- ghost nodes ----
+  ghosts.forEach(g => {
+    const p = ghostPos[g.layer + ":" + g.id];
+    drawGhost(g, p);
+  });
+
+  // ---- real nodes ----
+  nodes.forEach(n => drawNode(n, t));
+
+  drawLayerLabel(layer);
 }
 
-function drawSkepticOverlay() {
-  if (!state.skeptic) return;
-  // established path: sun → bridge → SCN (solid blue)
-  sctx.strokeStyle = "rgba(10,132,255,0.7)"; sctx.lineWidth = 2.5; sctx.setLineDash([]);
-  sctx.beginPath(); sctx.moveTo(SUN_POS.x + 34, SUN_POS.y); sctx.quadraticCurveTo(660, 200, NODE_POS[0][0] - 20, NODE_POS[0][1]); sctx.stroke();
-  // unproven path: planets → mood (dashed red)
-  sctx.strokeStyle = "rgba(255,69,58,0.55)"; sctx.lineWidth = 1.5; sctx.setLineDash([6,6]);
-  sctx.beginPath(); sctx.moveTo(240, 150); sctx.quadraticCurveTo(660, 480, NODE_POS[3][0] - 16, NODE_POS[3][1]); sctx.stroke();
-  sctx.setLineDash([]);
-  sctx.fillStyle = "rgba(255,255,255,0.75)";
-  sctx.font = "600 11px " + getComputedStyle(document.body).fontFamily;
-  sctx.textAlign = "center";
-  sctx.fillText("real", 800, 150);
-  sctx.fillStyle = "rgba(255,120,130,0.8)";
-  sctx.fillText("unproven", 500, 520);
+function edgeStyle(evidence, isHover) {
+  const e = EVIDENCE[evidence];
+  const alpha = isHover ? 1 : 0.55;
+  ctx.strokeStyle = hexToRgba(e.color, alpha);
+  ctx.lineWidth = 1.5 + e.weight * 0.6;
+  if (e.style === "dashed") ctx.setLineDash([7, 5]);
+  else if (e.style === "dotted") ctx.setLineDash([2, 5]);
+  else ctx.setLineDash([]);
 }
 
-function renderStage() {
-  sctx.setTransform(dpr*scale, 0, 0, dpr*scale, 0, 0);
-  sctx.clearRect(0,0,1280,620);
-  drawStars();
-  drawCelestial();
-  drawBridge();
-  drawHuman();
-  drawSkepticOverlay();
+function drawEdge(a, b, e, index, isCross) {
+  const pa = worldToScreen(a.x, a.y), pb = worldToScreen(b.x, b.y);
+  const dx = pb.x - pa.x, dy = pb.y - pa.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const mx = (pa.x + pb.x) / 2, my = (pa.y + pb.y) / 2;
+  const nxx = -dy / dist, nyy = dx / dist;
+  const bend = 26 * (index % 2 === 0 ? 1 : -1);
+  const cpx = mx + nxx * bend, cpy = my + nyy * bend;
+
+  const isHover = state.hover && state.hover.type === "edge" && state.hover.index === index;
+  edgeStyle(e.evidence, isHover);
+
+  ctx.beginPath();
+  ctx.moveTo(pa.x, pa.y);
+  ctx.quadraticCurveTo(cpx, cpy, pb.x, pb.y);
+  ctx.stroke();
+
+  // arrow head
+  const tArrow = 0.88;
+  const ax = quad(pa.x, cpx, pb.x, tArrow), ay = quad(pa.y, cpy, pb.y, tArrow);
+  const tx = quad(pa.x, cpx, pb.x, tArrow + 0.01) - ax;
+  const ty = quad(pa.y, cpy, pb.y, tArrow + 0.01) - ay;
+  const al = Math.sqrt(tx * tx + ty * ty) || 1;
+  const ux = tx / al, uy = ty / al;
+  ctx.fillStyle = hexToRgba(EVIDENCE[e.evidence].color, isHover ? 1 : 0.7);
+  ctx.beginPath();
+  ctx.moveTo(ax + ux * 6, ay + uy * 6);
+  ctx.lineTo(ax - ux * 4 + uy * 3.4, ay - uy * 4 - ux * 3.4);
+  ctx.lineTo(ax - ux * 4 - uy * 3.4, ay - uy * 4 + ux * 3.4);
+  ctx.closePath(); ctx.fill();
+
+  // flowing particle
+  const speed = EVIDENCE[e.evidence].weight;
+  const phase = (state.t * 0.06 * speed + index * 0.37) % 1;
+  const px = quad(pa.x, cpx, pb.x, phase), py = quad(pa.y, cpy, pb.y, phase);
+  ctx.fillStyle = hexToRgba(EVIDENCE[e.evidence].color, 0.95);
+  ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2); ctx.fill();
+
+  ctx.setLineDash([]);
+}
+function quad(p0, p1, p2, t) {
+  const mt = 1 - t;
+  return mt * mt * p0 + 2 * mt * t * p1 + t * t * p2;
 }
 
-/* ================= Chart ================= */
-const lineVisible = { cosmic:true, mood:true, astro:true };
-const lineColor = { cosmic:"#2997FF", mood:"#FF375F", astro:"#FF9F0A" };
-const lineDash = { cosmic:[], mood:[], astro:[5,4] };
+function drawGhost(g, pos) {
+  const p = worldToScreen(pos.x, pos.y);
+  const r = 13 * state.scale;
+  const isHover = state.hover && state.hover.type === "ghost" && state.hover.id === g.id;
+  ctx.globalAlpha = isHover ? 0.95 : 0.6;
+  ctx.fillStyle = hexToRgba(g.color, 0.9);
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.setLineDash([4, 3]);
+  ctx.strokeStyle = getCssVar("--ghost");
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = getCssVar("--ghost");
+  ctx.font = `${12 * Math.min(state.scale, 1.4)}px var(--font-text)`;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillText(g.label, p.x, p.y + r + 4);
+  ctx.globalAlpha = 1;
+}
 
-function renderChart() {
-  const w = chart.width, h = chart.height;
-  cctx.setTransform(1,0,0,1,0,0);
-  cctx.clearRect(0,0,w,h);
-  const padL = 30, padR = 8, padT = 8, padB = 18;
-  const iw = w - padL - padR, ih = h - padT - padB;
-  cctx.strokeStyle = "rgba(128,128,128,0.15)"; cctx.lineWidth = 1;
-  cctx.textAlign = "right"; cctx.font = "10px " + getComputedStyle(document.body).fontFamily;
-  for (let g = 0; g <= 4; g++) {
-    const y = padT + (g/4)*ih;
-    cctx.beginPath(); cctx.moveTo(padL,y); cctx.lineTo(w-padR,y); cctx.stroke();
-    cctx.fillStyle = "rgba(128,128,128,0.5)"; cctx.fillText((1 - g/4).toFixed(2), padL-5, y+3);
+function drawNode(n, t) {
+  const p = worldToScreen(n.x, n.y);
+  const base = n.size;
+  const breathe = 1 + 0.06 * Math.sin(t * 0.05 + (n.x + n.y) * 0.01);
+  const r = base * breathe * state.scale;
+  const isFocus = state.focusNode === n.id;
+  const isHover = state.hover && state.hover.type === "node" && state.hover.id === n.id;
+
+  // halo for diveable nodes
+  if (n.children) {
+    const haloR = r + 9 + 3 * Math.sin(t * 0.06);
+    ctx.strokeStyle = hexToRgba(n.color, 0.55);
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
   }
-  const drawLine = (key) => {
-    if (!lineVisible[key]) return;
-    const arr = HIST[key === "cosmic" ? "cosmic" : key === "mood" ? "mood" : "astro"];
-    const n = arr.length;
-    if (n < 2) return;
-    cctx.strokeStyle = lineColor[key]; cctx.lineWidth = 2;
-    cctx.setLineDash(lineDash[key]);
-    cctx.beginPath();
-    for (let i = 0; i < n; i++) {
-      const x = padL + (i/(MAX_HIST-1))*iw, y = padT + (1-arr[i])*ih;
-      i===0 ? cctx.moveTo(x,y) : cctx.lineTo(x,y);
-    }
-    cctx.stroke(); cctx.setLineDash([]);
-  };
-  drawLine("cosmic"); drawLine("mood"); drawLine("astro");
+
+  const alpha = (state.focusNode && state.focusNode !== n.id) ? 0.25 : 1;
+  ctx.globalAlpha = alpha;
+  const grad = ctx.createRadialGradient(p.x - r * 0.3, p.y - r * 0.3, r * 0.1, p.x, p.y, r);
+  grad.addColorStop(0, hexToRgba(lighten(n.color, 0.25), 1));
+  grad.addColorStop(1, hexToRgba(n.color, 0.9));
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+  if (isHover || isFocus) {
+    ctx.strokeStyle = getCssVar("--label");
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // label
+  ctx.fillStyle = getCssVar("--node-label");
+  ctx.font = `${Math.max(11, 13 * Math.min(state.scale, 1.3))}px var(--font-text)`;
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillText(n.label, p.x, p.y + r + 5);
+  ctx.globalAlpha = 1;
 }
 
-/* ================= Readouts ================= */
-const el = id => document.getElementById(id);
-function updateReadouts() {
-  const a = state.a;
-  const mood = a[IDX.mood], energy = a[IDX.eng], mel = a[IDX.mel];
-  const sync = pearson(HIST.scn, HIST.light);
-  const rCorr = pearson(HIST.cosmic, HIST.mood);
-  const rAstro = pearson(HIST.astro, HIST.mood);
-  const setBar = (id, v) => { el(id).style.width = (v*100).toFixed(1)+"%"; };
-  const setVal = (id, v) => { el(id).textContent = v.toFixed(2); };
-  setVal("rMood", mood); setBar("bMood", mood);
-  setVal("rEnergy", energy); setBar("bEnergy", energy);
-  setVal("rMel", mel); setBar("bMel", mel);
-  setVal("rSync", sync); setBar("bSync", Math.max(0, sync));
-  setVal("rCorr", rCorr); setBar("bCorr", (rCorr+1)/2);
-  el("rAstro").textContent = (rAstro>=0?"+":"") + rAstro.toFixed(2);
-  el("rSun").textContent = (rCorr>=0?"+":"") + rCorr.toFixed(2);
-  el("bAstro").style.width = ((rAstro+1)/2*100).toFixed(1)+"%";
-  el("bSun").style.width = ((rCorr+1)/2*100).toFixed(1)+"%";
+function drawLayerLabel(layer) {
+  ctx.fillStyle = getCssVar("--label-tertiary");
+  ctx.font = "11px var(--font-text)";
+  ctx.textAlign = "left"; ctx.textBaseline = "top";
+  ctx.fillText(layer.name.toUpperCase(), 16, 68);
 }
+
+/* ================= Color helpers ================= */
+function hexToRgba(hex, a) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function lighten(hex, amt) {
+  const h = hex.replace("#", "");
+  const r = Math.min(255, parseInt(h.substring(0, 2), 16) + amt * 255);
+  const g = Math.min(255, parseInt(h.substring(2, 4), 16) + amt * 255);
+  const b = Math.min(255, parseInt(h.substring(4, 6), 16) + amt * 255);
+  return `rgb(${r|0},${g|0},${b|0})`;
+}
+function getCssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* ================= Hit testing ================= */
+function hitTest(sx, sy) {
+  const layer = currentLayer();
+  const w = screenToWorld(sx, sy);
+  // nodes
+  for (const n of layer.nodes) {
+    const r = n.size * 1.35;
+    if ((w.x - n.x) ** 2 + (w.y - n.y) ** 2 <= r * r) return { type: "node", id: n.id, node: n };
+  }
+  // ghost nodes
+  const ghosts = ghostNodes(layer);
+  const ghostPos = {};
+  ghosts.forEach((g, i) => { ghostPos[g.layer + ":" + g.id] = { x: (i - (ghosts.length - 1) / 2) * 300, y: -430 }; });
+  for (const g of ghosts) {
+    const p = ghostPos[g.layer + ":" + g.id];
+    const r = 16;
+    if ((w.x - p.x) ** 2 + (w.y - p.y) ** 2 <= r * r) return { type: "ghost", id: g.id, node: g };
+  }
+  // edges (approximate: distance to quadratic curve midpoint)
+  for (let i = 0; i < layer.edges.length; i++) {
+    const e = layer.edges[i];
+    const a = layer.nodes.find(n => n.id === e.from), b = layer.nodes.find(n => n.id === e.to);
+    const pa = worldToScreen(a.x, a.y), pb = worldToScreen(b.x, b.y);
+    if (distToSeg(sx, sy, pa, pb) < 7) return { type: "edge", index: i, edge: e };
+  }
+  // cross edges
+  const crossList = (layer.cross || []).filter(e => state.filters[e.evidence]);
+  for (let i = 0; i < crossList.length; i++) {
+    const e = crossList[i];
+    const g = ghostPos[e.fromLayer + ":" + e.from];
+    const b = layer.nodes.find(n => n.id === e.to);
+    if (!g || !b) continue;
+    const pa = worldToScreen(g.x, g.y), pb = worldToScreen(b.x, b.y);
+    if (distToSeg(sx, sy, pa, pb) < 7) return { type: "edge", index: layer.edges.length + i, edge: e };
+  }
+  return null;
+}
+function distToSeg(px, py, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy || 1;
+  let t = ((px - a.x) * dx + (py - a.y) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = a.x + t * dx, cy = a.y + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
+/* ================= Interaction ================= */
+let dragging = false, lastX = 0, lastY = 0, moved = false;
+
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  zoomAt(e.clientX, e.clientY, factor);
+}, { passive: false });
+
+function zoomAt(cx, cy, factor) {
+  const before = screenToWorld(cx, cy);
+  state.scale = Math.max(0.4, Math.min(3.5, state.scale * factor));
+  const after = screenToWorld(cx, cy);
+  state.ox += (after.x - before.x) * state.scale;
+  state.oy += (after.y - before.y) * state.scale;
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  dragging = true; moved = false; lastX = e.clientX; lastY = e.clientY;
+  canvas.classList.add("grabbing");
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (dragging) {
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    state.ox += dx; state.oy += dy; lastX = e.clientX; lastY = e.clientY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+    return;
+  }
+  const hit = hitTest(e.clientX, e.clientY);
+  state.hover = hit;
+  canvas.classList.toggle("diveable", !!hit && hit.type === "node" && hit.node.children);
+  updateTooltip(e.clientX, e.clientY, hit);
+});
+canvas.addEventListener("pointerup", (e) => {
+  dragging = false;
+  canvas.classList.remove("grabbing");
+  if (!moved) {
+    const hit = hitTest(e.clientX, e.clientY);
+    if (hit && hit.type === "node" && hit.node.children) dive(hit.node);
+    else if (hit && hit.type === "node") { state.focusNode = (state.focusNode === hit.id ? null : hit.id); }
+    else state.focusNode = null;
+  }
+});
+canvas.addEventListener("pointerleave", () => { state.hover = null; hideTooltip(); });
 
 /* ================= Tooltip ================= */
 const tooltip = document.getElementById("tooltip");
-function showTooltip(html, x, y) {
+function updateTooltip(x, y, hit) {
+  if (!hit) { hideTooltip(); return; }
+  let html = "";
+  if (hit.type === "node") {
+    const n = hit.node;
+    html = `<div class="tt-name">${n.label}</div><div class="tt-desc">${n.desc}</div>`;
+    if (n.children) html += `<div class="tt-dive">↳ contains a nested system — click to dive in</div>`;
+  } else if (hit.type === "edge") {
+    const e = hit.edge;
+    html = `<div class="tt-name">${e.label} <span class="tt-badge" style="background:${hexToRgba(EVIDENCE[e.evidence].color,.2)};color:${EVIDENCE[e.evidence].color}">${e.evidence}</span></div><div class="tt-desc">${e.desc}</div>`;
+  } else if (hit.type === "ghost") {
+    const n = hit.node;
+    html = `<div class="tt-name">${n.label} <span class="tt-badge" style="background:rgba(127,127,127,.2);color:var(--label-secondary)">outer layer</span></div><div class="tt-desc">A system from the layer above, acting on this one.</div>`;
+  }
   tooltip.innerHTML = html;
   tooltip.classList.add("show");
-  const pad = 14, w = 260;
+  const pad = 16;
   let tx = x + pad, ty = y + pad;
-  if (tx + w > window.innerWidth - 8) tx = x - w - pad;
-  if (ty > window.innerHeight - 80) ty = y - 80;
-  tooltip.style.left = tx + "px";
-  tooltip.style.top = ty + "px";
+  const rect = tooltip.getBoundingClientRect();
+  if (tx + rect.width > W - 8) tx = x - rect.width - pad;
+  if (ty + rect.height > H - 8) ty = y - rect.height - pad;
+  tooltip.style.left = tx + "px"; tooltip.style.top = ty + "px";
 }
 function hideTooltip() { tooltip.classList.remove("show"); }
 
-function bodyTip(i) {
-  const b = BODIES[i];
-  const tag = b.est ? '<span class="tt-tag est">established</span>' : '<span class="tt-tag unp">unproven</span>';
-  return `${tag}<div class="tt-name">${b.name}</div><div class="tt-sub">${b.sub}</div>`;
+/* ================= Layer navigation ================= */
+function dive(node) {
+  if (state.transition || !node.children) return;
+  state.layerId = node.children;
+  state.focusNode = null;
+  playEnter();
+  updateBreadcrumb();
 }
-function nodeTip(i) {
-  const d = NODE_DEFS[i];
-  return `<div class="tt-name">${d.name}</div><div class="tt-sub">${d.long} · ${state.a[i].toFixed(2)}</div>`;
+function exitLayer() {
+  if (state.transition) return;
+  const layer = currentLayer();
+  if (!layer.parent) return;
+  const parentLayer = GRAPH.find(l => l.nodes.some(n => n.id === layer.parent));
+  state.layerId = parentLayer.id;
+  state.focusNode = null;
+  playEnter();
+  updateBreadcrumb();
+}
+function playEnter() {
+  state.transition = { from: { scale: 0.4, ox: 0, oy: 0 }, to: { scale: 1, ox: 0, oy: 0 }, t0: performance.now(), dur: 440, onDone: null, mode: "in" };
 }
 
-/* ================= Canvas pointer interaction ================= */
-function logicalXY(e) {
-  const r = stage.getBoundingClientRect();
-  return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
-}
-function hitTest(x, y) {
-  for (let i = 0; i < 6; i++) {
-    const p = NODE_POS[i], r = 22;
-    if ((x-p[0])**2 + (y-p[1])**2 <= r*r) return { type:"node", index:i };
+function updateBreadcrumb() {
+  const bc = document.getElementById("breadcrumb");
+  const layer = currentLayer();
+  const parts = [];
+  let lid = layer.id;
+  const chain = [];
+  while (lid) {
+    const l = getLayer(lid);
+    chain.unshift({ id: l.id, name: l.name });
+    if (!l.parent) break;
+    const parentLayer = GRAPH.find(x => x.nodes.some(n => n.id === l.parent));
+    lid = parentLayer ? parentLayer.id : null;
   }
-  for (let i = 0; i < BODIES.length; i++) {
-    const p = i === 0 ? SUN_POS : bodyXY(i);
-    const r = (BODIES[i].size || 24) + 8;
-    if ((x-p.x)**2 + (y-p.y)**2 <= r*r) return { type:"body", index:i };
-  }
-  return { type:null, index:-1 };
-}
-stage.addEventListener("mousemove", e => {
-  const { x, y } = logicalXY(e);
-  const hit = hitTest(x, y);
-  state.hover = hit;
-  stage.style.cursor = hit.type ? "pointer" : "default";
-  if (hit.type === "body") showTooltip(bodyTip(hit.index), e.clientX, e.clientY);
-  else if (hit.type === "node") showTooltip(nodeTip(hit.index), e.clientX, e.clientY);
-  else hideTooltip();
-});
-stage.addEventListener("mouseleave", () => { state.hover = { type:null, index:-1 }; hideTooltip(); });
-stage.addEventListener("click", e => {
-  const { x, y } = logicalXY(e);
-  const hit = hitTest(x, y);
-  if (hit.type === "node") { state.focusNode = (state.focusNode === hit.index ? -1 : hit.index); updateReadoutFocus(); }
-});
-
-/* ================= Readout focus ================= */
-function updateReadoutFocus() {
-  document.querySelectorAll(".readout").forEach(c => {
-    const n = parseInt(c.dataset.node, 10);
-    c.classList.toggle("focus", state.focusNode >= 0 && n === state.focusNode);
+  bc.innerHTML = "";
+  chain.forEach((c, i) => {
+    if (i > 0) { const s = document.createElement("span"); s.className = "sep"; s.textContent = "/"; bc.appendChild(s); }
+    const el = document.createElement("span");
+    el.className = "crumb" + (i === chain.length - 1 ? " current" : "");
+    el.textContent = c.name;
+    el.onclick = () => { if (i < chain.length - 1) { while (state.layerId !== c.id) exitLayer(); } };
+    bc.appendChild(el);
   });
 }
-document.querySelectorAll(".readout").forEach(c => {
-  c.addEventListener("click", () => {
-    const n = parseInt(c.dataset.node, 10);
-    state.focusNode = (state.focusNode === n ? -1 : n);
-    updateReadoutFocus();
-  });
-});
 
-/* ================= Legend toggle ================= */
-document.querySelectorAll("#legend .item").forEach(it => {
-  it.addEventListener("click", () => {
-    const k = it.dataset.line;
-    lineVisible[k] = !lineVisible[k];
-    it.classList.toggle("off", !lineVisible[k]);
-  });
-});
-
-/* ================= Dock ================= */
-const dockPanel = document.getElementById("dockPanel");
-const settingsBtn = document.getElementById("settings");
-function setPanel(open) {
-  dockPanel.classList.toggle("open", open);
-  settingsBtn.classList.toggle("active", open);
-}
-settingsBtn.addEventListener("click", e => { e.stopPropagation(); setPanel(!dockPanel.classList.contains("open")); });
-document.addEventListener("click", e => {
-  if (dockPanel.classList.contains("open") && !dockPanel.contains(e.target)) setPanel(false);
-});
-
-el("speed").addEventListener("input", e => { state.speed = parseFloat(e.target.value); el("vSpeed").textContent = state.speed.toFixed(2) + "×"; });
-el("coupling").addEventListener("input", e => { state.coupling = parseFloat(e.target.value); el("vCoupling").textContent = state.coupling.toFixed(2); });
-el("noise").addEventListener("input", e => { state.noise = parseFloat(e.target.value); el("vNoise").textContent = state.noise.toFixed(2); });
-
-const pauseBtn = el("pause");
-function updatePauseIcon() {
-  pauseBtn.innerHTML = state.running
-    ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-}
-pauseBtn.addEventListener("click", () => { state.running = !state.running; updatePauseIcon(); });
-
-el("shuffle").addEventListener("click", () => {
-  for (let i = 0; i < BODIES.length; i++) state.angles[i] = Math.random()*6.283;
-  state.moonAngle = Math.random()*6.283;
-});
-el("reset").addEventListener("click", () => {
-  state.t = 0; state.a = new Array(6).fill(0.5);
-  state.angles = BODIES.map((b,i) => (i*1.7)%(Math.PI*2)); state.moonAngle = 0;
-  for (const k in HIST) HIST[k].length = 0;
-});
-
-const skepticBtn = el("skepticBtn");
-skepticBtn.addEventListener("click", () => {
-  state.skeptic = !state.skeptic;
-  skepticBtn.classList.toggle("active", state.skeptic);
-});
-
-/* ================= Accordion cards ================= */
-document.querySelectorAll(".card").forEach(card => {
-  card.querySelector(".card-head").addEventListener("click", () => card.classList.toggle("open"));
-});
-document.querySelectorAll(".tier").forEach(t => {
-  t.addEventListener("click", () => t.classList.toggle("open"));
-});
-
-/* ================= Oracle (typing + reveal) ================= */
-const BARNUMS = [
-  "You have a great deal of unused capacity which you have not turned to your advantage.",
-  "You have a tendency to be critical of yourself.",
-  "At times you are extroverted and sociable, while at other times you are introverted and reserved.",
-  "Disciplined and self-controlled on the outside, you tend to be worrisome and insecure inside.",
-  "You prefer a certain amount of change and variety, and become dissatisfied when hemmed in by restrictions.",
-  "You pride yourself on being an independent thinker, and do not accept others' claims without proof.",
-  "While you have some personality weaknesses, you are generally able to compensate for them.",
-  "Security is one of your major goals in life.",
-  "You have a strong need for other people to like and admire you.",
-];
-const PLANET_WORDS = ["the Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "your rising sign", "the 7th house", "Neptune's trine"];
-function shuffle(arr){ const c = arr.slice(); for(let i=c.length-1;i>0;i--){const j=(Math.random()*(i+1))|0; [c[i],c[j]]=[c[j],c[i]];} return c; }
-
-let oracleReads = 0, typing = false;
-function newReading() {
-  if (typing) return;
-  const p = shuffle(PLANET_WORDS).slice(0,3);
-  const b = shuffle(BARNUMS).slice(0,2);
-  const intro = `With ${p[0]} moving through ${p[1]} and ${p[2]} in aspect —`;
-  const full = `${intro}\n\n${b[0]}\n\n${b[1]}`;
-  const box = el("oracle");
-  box.textContent = "";
-  typing = true;
-  let i = 0;
-  const speed = 16;
-  (function type(){
-    if (i <= full.length) {
-      box.textContent = full.slice(0, i);
-      box.appendChild(Object.assign(document.createElement("span"), { className:"cursor" }));
-      i++;
-      setTimeout(type, speed);
-    } else {
-      typing = false;
-      box.lastChild && box.remove();
-      oracleReads++;
-      if (oracleReads >= 2) el("oracleReveal").classList.add("on");
-    }
-  })();
-}
-el("reading").addEventListener("click", newReading);
-
-/* ================= Survivorship ================= */
-const predsEl = el("preds");
-let preds = [];
-function buildPreds() {
-  predsEl.innerHTML = ""; preds = [];
-  for (let i = 0; i < 24; i++) {
-    const hit = Math.random() < 0.25;
-    preds.push(hit);
-    const s = document.createElement("span");
-    s.className = hit ? "hit" : "miss";
-    s.textContent = hit ? "✓" : "×";
-    predsEl.appendChild(s);
+/* ================= Legend ================= */
+function buildLegend() {
+  const lg = document.getElementById("legend");
+  lg.innerHTML = `<div class="legend-title">Evidence strength</div>`;
+  for (const key of Object.keys(EVIDENCE)) {
+    const e = EVIDENCE[key];
+    const row = document.createElement("div");
+    row.className = "legend-row";
+    row.dataset.key = key;
+    const sw = document.createElement("span");
+    sw.className = "swatch" + (e.style === "dashed" ? " dashed" : e.style === "dotted" ? " dotted" : "");
+    sw.style.borderColor = e.color;
+    const lab = document.createElement("span");
+    lab.textContent = e.label;
+    row.appendChild(sw); row.appendChild(lab);
+    row.onclick = () => {
+      state.filters[key] = !state.filters[key];
+      row.classList.toggle("off", !state.filters[key]);
+    };
+    lg.appendChild(row);
   }
 }
-buildPreds();
-el("filterHits").addEventListener("click", () => { [...predsEl.children].forEach((c,i) => c.classList.toggle("dim", !preds[i])); });
-el("filterAll").addEventListener("click", () => { [...predsEl.children].forEach(c => c.classList.remove("dim")); });
+function buildHint() {
+  const h = document.getElementById("hint");
+  h.innerHTML = `<span class="key">scroll</span> zoom &nbsp;·&nbsp; <span class="key">drag</span> pan<br>click a <b>ringed</b> node to dive a level`;
+  setTimeout(() => h.classList.add("fade"), 9000);
+}
 
-/* ================= Onboarding ================= */
-const ob = el("ob"), obText = el("obText"), obStep = el("obStep");
-const OB_STEPS = [
-  "Agents in orbit, each emitting a signal.",
-  "A body of coupled agents, entrained.",
-  "One signal bridges them. Causal — or coincidence?",
-];
-let obIdx = 0;
-function renderOb() {
-  obText.textContent = OB_STEPS[obIdx];
-  obStep.textContent = (obIdx+1) + " / " + OB_STEPS.length;
-  el("obNext").textContent = obIdx === OB_STEPS.length-1 ? "Got it" : "Next";
-}
-function closeOb() {
-  ob.classList.add("hide");
-  localStorage.setItem("aasb-seen", "1");
-}
-el("obNext").addEventListener("click", () => {
-  if (obIdx < OB_STEPS.length-1) { obIdx++; renderOb(); }
-  else closeOb();
+/* ================= Theme & help ================= */
+const btnTheme = document.getElementById("btn-theme");
+function setTheme(t) { document.documentElement.setAttribute("data-theme", t); }
+btnTheme.addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : "dark";
+  setTheme(next);
+  try { localStorage.setItem("aasb-theme", next); } catch (e) {}
 });
-el("obSkip").addEventListener("click", closeOb);
-el("helpBtn").addEventListener("click", () => { obIdx = 0; renderOb(); ob.classList.remove("hide"); });
-if (localStorage.getItem("aasb-seen")) ob.classList.add("hide");
-else renderOb();
-
-/* hint fade */
-setTimeout(() => el("hint").classList.add("fade"), 4000);
+const btnHelp = document.getElementById("btn-help");
+const help = document.getElementById("help");
+btnHelp.addEventListener("click", () => help.classList.add("open"));
+document.getElementById("btn-close-help").addEventListener("click", () => help.classList.remove("open"));
+help.addEventListener("click", (e) => { if (e.target === help) help.classList.remove("open"); });
 
 /* ================= Main loop ================= */
-let lastTs = 0;
-function loop(ts) {
-  const dtReal = Math.min(0.05, (ts - lastTs)/1000 || 0.016);
-  lastTs = ts;
-  if (state.running) {
-    step(dtReal * state.speed);
-    if (state.t - state.lastSample >= 0.06) { record(); state.lastSample = state.t; }
+function loop(now) {
+  // transitions
+  if (state.transition) {
+    const tr = state.transition;
+    const k = Math.min(1, (now - tr.t0) / tr.dur);
+    const e = easeOutCubic(k);
+    state.scale = tr.from.scale + (tr.to.scale - tr.from.scale) * e;
+    state.ox = tr.from.ox + (tr.to.ox - tr.from.ox) * e;
+    state.oy = tr.from.oy + (tr.to.oy - tr.from.oy) * e;
+    if (k >= 1) {
+      const done = tr.onDone;
+      state.transition = null;
+      if (done) done();
+    }
   }
-  renderStage();
-  renderChart();
-  updateReadouts();
+  state.t++;
+  // keep layout alive (gentle)
+  const layer = currentLayer();
+  if (state.t % 2 === 0) layoutTick(layer);
+  draw();
   requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+/* ================= Init ================= */
+function init() {
+  resize();
+  window.addEventListener("resize", resize);
+  GRAPH.forEach(initLayout);
+  buildLegend();
+  buildHint();
+  updateBreadcrumb();
+  try { setTheme(localStorage.getItem("aasb-theme") || "dark"); } catch (e) { setTheme("dark"); }
+  requestAnimationFrame(loop);
+  if (!sessionStorage.getItem("aasb-help-shown")) {
+    help.classList.add("open");
+    try { sessionStorage.setItem("aasb-help-shown", "1"); } catch (e) {}
+  }
+}
+init();
+
+})();
 </script>
 </body>
 </html>
